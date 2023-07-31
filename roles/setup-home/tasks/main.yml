@@ -1,0 +1,53 @@
+---
+- name: Setup Home Assistant
+  block:
+  - name: Ensure config dir exists
+    file:
+      path: "{{ project_directory }}/home-assistant/config"
+      state: directory
+      recurse: true
+      mode: 0777
+  
+  - name: Setup Home Assistant
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: homeassistant
+      image: "ghcr.io/home-assistant/home-assistant:stable"
+      networks:
+        - name: homeassistant
+      ports:
+        - 8743:8123
+      devices:
+        - /dev/ttyACM0:/dev/ttyACM0
+      volumes:
+        - "{{ project_directory }}/home-assistant/config/:/config"
+        - "/etc/localtime:/etc/localtime:ro"
+
+  - name: Setup ESPHome
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: esphome
+      image: "ghcr.io/esphome/esphome:stable"
+      networks:
+        - name: homeassistant
+      ports:
+        - 6052:6052
+      volumes:
+        - "{{ project_directory }}/esphome/config/:/config"
+        - "/etc/localtime:/etc/localtime:ro"
+      env:
+        ESPHOME_DASHBOARD_USE_PING: "true"
+
+  - name: Setup Mosquitto
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: mosquitto
+      image: "eclipse-mosquitto"
+      ports:
+        - 1883:1883
+      volumes:
+        - "{{ project_directory }}/mosquitto/config/:/mosquitto/config"
+        - "{{ project_directory }}/mosquitto/data/:/mosquitto/data"

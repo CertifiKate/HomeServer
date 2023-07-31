@@ -1,0 +1,14 @@
+---
+- name: Restart Prometheus
+  community.docker.docker_container:
+    name: prometheus
+    container_default_behavior: compatibility
+    restart: yes
+  listen: restart prometheus
+
+- name: Restart Loki
+  community.docker.docker_container:
+    name: loki
+    container_default_behavior: compatibility
+    restart: yes
+  listen: restart loki

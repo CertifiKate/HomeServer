@@ -1,0 +1,52 @@
+# Create a mounted location within the LXD which stores all persistent config - this allows us to backup just
+# the lxd_base_dir directory and have a backup of all config for containers on that system
+
+- name: Create LXC
+  throttle: 1
+  community.general.proxmox:
+    vmid: '{{ vmid }}'
+    node: '{{ node }}'
+    api_user: '{{ pve_api_user }}'
+    api_password: '{{ pve_api_password }}'
+    api_host: '{{ hostvars[node].ansible_host }}'
+    password: '{{ password | default(omit) }}'
+    hostname: '{{ inventory_hostname }}'
+    ostemplate: 'local:vztmpl/{{ ostemplate }}'
+    storage: 'local-lvm'
+    cores: '{{ cores | default(1) }}'
+    memory: '{{ memory | default(512) }}'
+    swap: '{{ swap | default(512) }}'
+    onboot: '{{ onboot | default(true) }}'
+    pubkey: '{{ pve_ansible_pubkey }}'
+    unprivileged: '{{ pve_unprivileged | default(true) }}'
+    netif:
+      '{{ lxc_network_interfaces }}'
+    features:
+    - nesting=1
+
+- name: Proxmox Host configuration for LXC
+  delegate_to: "{{ node }}"
+  connection: ssh
+  become: true
+  block:
+    - name: Ensure bind mount directories exist
+      file:
+        path: "{{ item.value.host_path }}"
+        state: directory
+        owner: '100000'
+        group: '100000'
+        recurse: true
+      loop: "{{ lxc_mounts | dict2items }}"
+      loop_control:
+        label: "{{ item.value.host_path }}"
+
+    - name: Add mount points
+      command:
+        #     pct set 150        --mp1            /mnt/disk1/Media          ,mp=/data/
+        cmd: "pct set {{ vmid }} --{{ item.key }} {{ item.value.host_path }},mp={{ item.value.container_path }}"
+      register: mpResponse
+      changed_when: mpResponse.rc not in [0]
+      failed_when: mpResponse.rc not in [0,1]
+      loop: "{{ lxc_mounts | dict2items }}"
+      loop_control:
+        label: "{{ item.value.host_path }} -> {{ item.value.container_path }}"

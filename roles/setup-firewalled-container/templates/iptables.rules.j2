@@ -1,0 +1,21 @@
+*filter
+
+{# Always allow DNS #}
+-A OUTPUT -p udp --dport 53 -j ACCEPT
+
+{# Drop all incoming and outgoing traffic #}
+-A INPUT -i {{ interface | default('eth0') }} -j DROP
+
+{# Allow established traffic #}
+{% if allowEstablished %}
+-A INPUT i {{ interface | default('eth0') }} -m state --state RELATED,ESTABLISHED -j ACCEPT
+{% endif%}
+
+{# Allow ssh #}
+{% if allowSSH is defined and allowSSH | bool%}
+-A INPUT i {{ interface | default('eth0') }} --dport 22 -j ACCEPT
+{% endif%}
+
+{# Add any extra rules as required (allow certain ports/ips, add wireguard interfaces etc. #}
+{{ extra_iptables_rules | default() }}
+COMMIT

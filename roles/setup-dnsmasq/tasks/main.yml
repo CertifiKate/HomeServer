@@ -1,0 +1,35 @@
+---
+
+- name: Install and setup dnsmasq
+  block:
+
+    - name: Install DNSMASQ
+      apt:
+        pkg:
+        - 'dnsmasq'
+        state: latest
+        update_cache: yes
+
+    - name: Disable and stop systemd-resolved
+      service:
+        name: systemd-resolved
+        state: stopped
+        enabled: no
+
+    - name: Configure DNSMASQ
+      template:
+        src: dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+      register: dnsmasqConfig
+
+    - name: Restart DNSMASQ
+      service:
+        name: dnsmasq
+        state: restarted
+      when: dnsmasqConfig.changed
+  
+    - name: Enable and start DNSMASQ service
+      service:
+        name: dnsmasq
+        state: started
+        enabled: yes

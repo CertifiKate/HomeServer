@@ -1,0 +1,93 @@
+---
+- name: Install required system packages
+  apt:
+    pkg:
+      - pip
+      - borgbackup
+    update_cache: true
+
+- name: Install required pip packages
+  pip: 
+    name: "{{ item }}"
+  loop: [ 'pexpect' ]
+  tags:
+    - backup
+    - localBackup
+
+- block:
+  - name: Ensure local repo location exists
+    file:
+      path: "{{ local_borg_repo_dir }}"
+      state: directory
+      
+  - name: Initialise local borg repo
+    expect:
+      # If this file exists then don't run this
+      creates: "{{ local_borg_repo_services }}"
+      command:
+        "borg init --append-only --encryption=repokey-blake2 {{ local_borg_repo_services }}"
+      responses:
+        (?i)Enter: "{{ vault_borgbackup_key_local_services }}"
+        (?i)passphrase to be displayed: "N"
+
+  # Backup locally for convenience and rollback - NOT for disaster 
+  - name: Setup local services backup
+    include_role: 
+      name: m3nu.ansible_role_borgbackup
+    vars:
+      borg_repository: 
+        - "{{ local_borg_repo_services }}"
+      borg_source_directories:
+        - "{{ project_directory }}"
+      borg_encryption_passphrase: "{{ vault_borgbackup_key_local_services }}"
+      borgmatic_config_name: "local-services-backup.yml"
+      borgmatic_cron_name: "borgmatic-local"
+      borgmatic_large_repo: false
+      borg_retention_policy:
+        keep_daily: 7
+        keep_weekly: 4
+        keep_monthly: 6
+      # Run local backup at 2am every morning
+      borgmatic_cron_hour: 2
+      borgmatic_cron_minute: 0
+      borgmatic_hooks:
+        before_backup:
+        - "for ct in $(lxc-ls --running); do lxc-freeze $ct; done" 
+        after_backup:
+        - "for ct in $(lxc-ls --frozen); do lxc-unfreeze $ct; done" 
+        on_error:
+        - 'for ct in $(lxc-ls --frozen); do lxc-unfreeze $ct; done; /scripts/slack-notify.sh -c u -f "Local Backup Failed" -h "Local Backup Failed" -t "Daily Backup Failed at `date`"'
+  tags:
+  - backup
+  - localBackup
+
+- name: Setup remote services backup
+  include_role: 
+    name: m3nu.ansible_role_borgbackup
+  vars:
+    borg_encryption_passphrase: "{{ vault_borgbackup_key_services }}"
+    borg_repository: "{{ vault_borgbackup_repo }}"
+    borg_source_directories:
+      - "{{ project_directory }}"
+    borg_exclude_patterns:
+      - "{{ project_directory }}/calibre/books"
+    borgmatic_config_name: "services-backup.yml"
+    borgmatic_cron_name: "borgmatic-remote"
+    borgmatic_large_repo: false
+    borg_retention_policy:
+      keep_daily: 7
+      keep_weekly: 4
+      keep_monthly: 6
+    # Run remote backup at 3.30am every morning
+    borgmatic_cron_hour: 3
+    borgmatic_cron_minute: 30
+    borgmatic_hooks:
+      before_backup:
+      - "for ct in $(lxc-ls --running); do lxc-freeze $ct; done" 
+      after_backup:
+      - "for ct in $(lxc-ls --frozen); do lxc-unfreeze $ct; done" 
+      on_error:
+      - 'for ct in $(lxc-ls --frozen); do lxc-unfreeze $ct; done; /scripts/slack-notify.sh -c u -f "Local Backup Failed" -h "Local Backup Failed" -t "Daily Backup Failed at `date`"'
+  tags: 
+  - backup
+  - remoteBackup

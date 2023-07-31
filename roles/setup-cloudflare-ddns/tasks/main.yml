@@ -1,0 +1,12 @@
+---
+- name: Create Cloudflare DDNS container
+  include_role:
+    name: generic-setup-docker-container
+  vars:
+    name: cloudflareddns
+    image: oznu/cloudflare-ddns
+    env:
+      API_KEY: '{{ vault_cloudflare_ddns_token }}'
+      ZONE: '{{ project_tld }}'
+      SUBDOMAIN: vpn
+  tags: cloudflareddns

@@ -1,0 +1,113 @@
+---
+- name: Ensure monitoring directories exist
+  file:
+    path: "{{ project_directory }}/monitoring/{{ item }}"
+    state: directory
+  no_log: true
+  with_items:
+    - grafana/data/
+    - prometheus/data/
+    - loki/
+    - influxdb/
+  tags: 
+  - monitoring
+  - prometheus
+  - grafana
+
+- block:
+  - name: Copy Prometheus configs
+    template:
+      src: "{{item.src}}"
+      dest: "{{item.dest}}"
+      mode: 0777
+    with_items:
+      - {src: ./prometheus.yml.j2, dest: "{{ project_directory }}/monitoring/prometheus/prometheus.yml"}
+    notify: restart prometheus
+
+  - name: Deploy Prometheus container
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: prometheus
+      image: prom/prometheus
+      networks:
+        - name: monitoring
+      ports:
+        - "3200:9090"
+      volumes:
+        - "{{ project_directory }}/monitoring/prometheus/tls/:/etc/prometheus/tls/"
+        - "{{ project_directory }}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+        - "{{ project_directory }}/monitoring/prometheus/data/:/prometheus"
+  tags: 
+  - prometheus
+  - monitoring
+
+- block:
+  - name: Setup InfluxDB (Proxmox metrics)
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: influxdb
+      image: influxdb
+      networks:
+        - name: monitoring
+      ports:
+        - "8086:8086"
+        - "8089:8089/udp"
+      volumes:
+        - '{{ project_directory}}/monitoring/influxdb/data/:/var/lib/influxdb2'
+        - '{{ project_directory}}/monitoring/influxdb/config/:/etc/influxdb2'
+
+- block:
+  - name: Create Grafana container
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: grafana
+      image: grafana/grafana
+      networks:
+        - name: monitoring
+      ports:
+        - "3000:3000"
+      state: started
+      volumes:
+        - "{{ project_directory }}/monitoring/grafana/data/:/var/lib/grafana/"
+      env:
+        GF_SERVER_ROOT_URL: "https://monitor.{{ project_tld }}"
+        GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+        GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+        GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "{{ vault_authentik_grafana_oauth_clientId }}"
+        GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: "{{ vault_authentik_grafana_oauth_clientSecret }}"
+        GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+        GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://auth.{{ project_tld }}/application/o/authorize/"
+        GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://auth.{{project_tld}}/application/o/token/"
+        GF_AUTH_GENERIC_OAUTH_API_URL: "https://auth.{{project_tld}}/application/o/userinfo/"
+        GF_AUTH_SIGNOUT_REDIRECT_URL: "https://auth.{{ project_tld }}/application/o/grafana/end-session/"
+        GF_AUTH_OAUTH_AUTO_LOGIN: "true"
+        GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "false"
+        GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'grafana_admin') && 'Admin' || 'Viewer'"
+        GF_UNIFIED_ALERTING_ENABLED: "true"
+        GF_EXTERNAL_IMAGE_STORAGE_PROVIDER: "local"
+  tags:
+  - grafana
+  - monitoring
+
+- block:
+  - name: Ensure gotify directory exists
+    file:
+      path: "{{ project_directory }}/gotify/data"
+      state: directory
+    
+  - name: Setup gotify
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: gotify
+      image: gotify/server
+      ports:
+        - "3300:80"
+      state: started
+      volumes:
+        - "{{ project_directory }}/gotify/data:/app/data"
+      env:
+        TZ: "{{ timezone }}"

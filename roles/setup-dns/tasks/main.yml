@@ -1,0 +1,33 @@
+---
+- name: Ensure Technitium directory exists
+  file:
+    path: "{{ project_directory }}/technitium/{{ item }}"
+    state: directory
+  with_items:
+    - config/
+  tags: dns
+
+- name: Create Technitium docker container
+  community.docker.docker_container:
+    name: technitium
+    image: technitium/dns-server:latest
+    pull: '{{ docker_pull }}'
+    recreate: '{{ docker_recreate }}'
+    hostname: technitium
+    container_default_behavior: compatibility
+    network_mode: default
+    restart_policy: unless-stopped
+    ports:
+      # Web UI
+      - "5380:5380/tcp"
+      # External network
+      - "{{ external_ip }}:53:53/udp"
+      - "{{ external_ip }}:53:53/tcp"
+      # Internal network
+      - "{{ ansible_host }}:53:53/udp"
+      - "{{ ansible_host }}:53:53/tcp"
+    env:
+      DNS_SERVER_DOMAIN: "dns.{{ project_tld }}" #The primary domain name used by this DNS Server to identify itself.
+    volumes:
+      - "{{ project_directory }}/technitium/config/:/etc/dns/config"
+  tags: dns

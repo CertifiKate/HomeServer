@@ -1,0 +1,75 @@
+- name: Setup Minecraft
+  block:
+  - name: Ensure Minecraft Directory Exist
+    file:
+      path: "{{ project_directory }}/minecraft/data/"
+      state: directory
+
+  - name: Install Minecraft
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: minecraft
+      image: itzg/minecraft-server
+      ports:
+        - "25565:25565"
+      networks:
+        - name: "minecraft"
+      volumes:
+        - "{{ project_directory }}/minecraft/data:/data"
+      env:
+        REPLACE_ENV_VARIABLES: "true"
+        EULA: "true"
+        ENABLE_RCON: "true"
+        RCON_PASSWORD: "{{ vault_minecraft_rcon_pass }}"
+        TYPE: "paper"
+        # Add LuckPerms, and Vault
+        SPIGET_RESOURCES: "28140,34315"
+
+  - name: Install backup container
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: minecraft-backup
+      image: itzg/mc-backup
+      volumes:
+        - "{{ project_directory }}/minecraft/data:/data:ro"
+        - "{{ project_directory }}/minecraft-backup/data:/backups"
+      networks:
+        - name: "minecraft"
+      env:
+        SRC_DIR: "/data"
+        DEST_DIR: "/backups"
+        BACKUP_INTERVAL: "6h"
+        RCON_HOST: "minecraft"
+        RCON_PORT: "25575"
+        RCON_PASSWORD: "{{ vault_minecraft_rcon_pass }}"
+        BACKUP_METHOD: "tar"
+        PRUNE_BACKUPS_DAYS: "1"
+  
+  - name: Backup to borg
+    include_role: 
+      name: m3nu.ansible_role_borgbackup
+    vars:
+      borg_encryption_passphrase: "{{ vault_borgbackup_key_minecraft }}"
+      borg_repository: "{{ vault_borgbackup_minecraft_repo }}"
+      borg_source_directories:
+        - "{{ project_directory }}/minecraft-backup/data/latest"
+      borgmatic_config_name: "minecraft-backup.yml"
+      borgmatic_cron_name: "borg-minecraft"
+      borgmatic_large_repo: false
+      borg_retention_policy:
+        keep_daily: 7
+        keep_weekly: 4
+        keep_monthly: 3
+      # Run remote backup at 3.30am every morning
+      borgmatic_cron_hour: 3
+      borgmatic_cron_minute: 30
+      borgmatic_hooks:
+        before_backup:
+        # Dump the latest tar into the latest folder
+        - "/bin/rm {{ project_directory}}/minecraft-backup/data/latest/* -R; /bin/tar -xzf $(ls -t {{ project_directory }}/minecraft-backup/data/world* | head -1) -C {{ project_directory }}/minecraft-backup/data/latest" 
+        on_error:
+        - '/scripts/slack-notify.sh -c u -f "Minecraft Remote Backup Failed" -h "Minecraft Remote Backup Failed" -t "Minecraft Daily Backup Failed at `date`"'
+
+  tags: minecraft

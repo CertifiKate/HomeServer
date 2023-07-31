@@ -1,0 +1,78 @@
+---
+- name: Ensure monitoring-client directories exist
+  file:
+    path: "{{ project_directory }}/monitoring-client/{{ item }}"
+    state: directory
+  no_log: true
+  with_items:
+    - promtail/
+    - syslog-ng/
+  tags: 
+  - monitoring-client
+  - promtail
+  - syslog
+
+- name: Create NodeExporter Container
+  community.docker.docker_container:
+    name: nodeexporter
+    image: prom/node-exporter
+    pull: '{{ docker_pull }}'
+    recreate: '{{ docker_recreate }}'
+    hostname: nodeexporter
+    container_default_behavior: compatibility
+    restart_policy: unless-stopped
+    networks:
+      - name: host
+    state: started
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  tags: 
+    - nodeexporter
+    - monitoring-client
+
+- name: Copy Promtail configs
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - {src: promtail.yml.j2, dest: "{{ project_directory }}/monitoring-client/promtail/promtail.yml"}
+  # no_log: true
+  tags: 
+  - promtail
+  - monitoring-client
+  notify: restart promtail
+  when: host_is_physical is undefined or not host_is_physical | bool
+
+- name: Deploy Promtail container
+  community.docker.docker_container:
+    name: promtail
+    image: grafana/promtail:2.3.0
+    pull: '{{ docker_pull }}'
+    recreate: '{{ docker_recreate }}'
+    hostname: promtail
+    container_default_behavior: compatibility
+    network_mode: default
+    restart_policy: unless-stopped
+    networks:
+      - name: monitoring-client
+    state: started
+    volumes:
+      - '/var/log:/var/log:ro'
+      - '/var/lib/docker/containers:/var/lib/docker/containers:ro'
+      - '{{ traefik_access_log_dir if (monitoring_uses_traefik is defined and monitoring_uses_traefik) else omit }}'
+      - '{{ project_directory }}/monitoring-client/promtail/promtail.yml:/etc/promtail/config.yml'
+    command:
+      - '-config.file=/etc/promtail/config.yml'
+  vars:
+    traefik_access_log_dir: '{{ project_directory }}/traefik/data/:/var/traefik-access-log/:ro'
+  tags: 
+  - promtail
+  - monitoring-client
+  when: host_is_physical is undefined or not host_is_physical | bool

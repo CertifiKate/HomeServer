@@ -1,0 +1,46 @@
+---
+- name: Manage Proxmox CTs
+  hosts: pve_lxd_containers
+  connection: local
+  gather_facts: false
+  order: sorted
+  tasks:
+    - name: Ping LXCs
+      connection: ssh
+      ping:
+      tags:
+        - never
+        - ping-lxc
+      
+    - name: Start LXCs
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: started
+      tags:
+        - never
+        - start-lxc
+
+    - name: Stop LXCs
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: stopped
+      tags:
+        - never
+        - stop-lxc
+
+    - name: Restart LXCs
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: restarted
+      tags:
+        - never
+        - restart-lxc

@@ -1,0 +1,31 @@
+---
+- name: Setup Cloudflared
+  include_role:
+    name: papanito.cloudflared
+  vars:
+    cf_remove_unused_tunnel: true
+    cf_download_baseurl: https://pkg.cloudflare.com
+    cf_cert_location: group_vars/servers/cloudflared-cert.pem
+    cf_os_package_enable: true
+    cf_repository: deb http://pkg.cloudflare.com/ buster main
+    cf_tunnels:
+      tunnel01:
+        account_tag: '{{ vault_cloudflare_tunnel_account_tag }}'
+        tunnel_secret: '{{ vault_cloudflare_tunnel_secret }}'
+        tunnel_id: '{{ vault_cloudflare_tunnel_id }}'
+        routes:
+          dns:
+            - "auth"
+            - "jellyseer"
+            - "storage"
+        ingress:
+        # Cloudflared is using our internal DNS so it should work like this
+          - hostname: "auth.{{ project_tld }}"
+            service: "https://auth.{{ project_tld }}"
+          - hostname: "storage.{{ project_tld }}"
+            service: "https://storage.{{ project_tld }}"
+          - hostname: "jellyseer.{{ project_tld }}"
+            service: "https://jellyseer.{{ project_tld }}"          
+          - service: "http_status:404"
+  tags: 
+    - cloudflared

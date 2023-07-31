@@ -1,0 +1,29 @@
+filter: "evt.Parsed.program == 'authentik'"
+onsuccess: next_stage
+name: crowdsecurity/authentik-logs
+description: "Parse Authentik Logs"
+pattern_syntax:
+  AUTHENTIK_BAD_LOGIN: 'action": "login_failed", .*client_ip": "%{IPORHOST:source_ip}".*"username": "%{DATA:username}".*"host": "%{DATA:url}".*"timestamp": "%{DATA:timestamp}"'
+  AUTHENTIK_INVALID_LOGIN: 'action": "invalid_login", .*client_ip": "%{IPORHOST:source_ip}".*"identifier": "%{DATA:username}".*"timestamp": "%{DATA:timestamp}"'
+nodes:
+ - grok:
+     name: "AUTHENTIK_BAD_LOGIN"
+     apply_on: message
+     statics:
+       - meta: log_type
+         value: authentik_failed_auth
+       - meta: log_subtype
+         value: authentik_failed_login
+statics:
+    - meta: service
+      value: authentik
+    - target: evt.StrTime
+      expression: evt.Parsed.timestamp
+    - meta: timestamp
+      expression: evt.Parsed.timestamp
+    - meta: target_user
+      expression: evt.Parsed.username
+    - meta: authentik_url
+      expression: evt.Parsed.url
+    - meta: source_ip
+      expression: evt.Parsed.source_ip

@@ -1,0 +1,34 @@
+---
+- name: Ensure Nextcloud config directory exists with proper permissions
+  file:
+    path: "{{project_directory}}/nextcloud/config"
+    state: directory
+    owner: "{{ nextcloud_container_uid }}"
+    group: "{{ nextcloud_container_gid }}"
+    recurse: "yes" 
+  tags: nextcloud
+
+- name: Set storage files with nextcloud owners and permissions
+  file:
+    path: "{{ hostvars[node].storage_directory }}" 
+    owner: "{{ nextcloud_container_uid }}"
+    group: "{{ nextcloud_container_gid }}"
+    recurse: "yes" 
+  tags: nextcloud
+
+- name: Create NextCloud docker container
+  include_role:
+    name: generic-setup-docker-container
+  vars:
+    name: nextcloud
+    image: ghcr.io/linuxserver/nextcloud
+    ports:
+      - '443:443'
+    volumes:
+      - "{{ project_directory }}/nextcloud/config/:/config/"
+      - "{{ hostvars[node].storage_directory }}:/data/"
+    env:
+      PUID: "{{ nextcloud_container_uid }}"
+      PGID: "{{ nextcloud_container_gid }}"
+      TZ: "{{ timezone }}"
+  tags: nextcloud

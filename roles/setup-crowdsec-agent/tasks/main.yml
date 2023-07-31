@@ -1,0 +1,127 @@
+---
+- name: Generic setup
+  block:
+  - name: Ensure config dirs exist
+    file:
+      path: "{{ project_directory }}/crowdsec/{{item}}/"
+      state: directory
+    with_items:
+      - config/crowdsec
+      - data
+
+  tags: 
+    - crowdsec-agent
+    - crowdsec-lapi
+
+- name: Install Crowdsec Agent (LAPI)
+  block:
+
+  - name: Copy agent config
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - {src: lapi-config.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/config.yaml"}
+      - {src: lapi-profile.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/profiles.yaml"}
+      - {src: lapi-notifications-slack.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/notifications/slack.yaml"}
+    notify: restart crowdsec-lapi
+
+  - name: Install LAPI Agent
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: crowdsec-lapi
+      image: crowdsecurity/crowdsec
+      networks:
+        - name: crowdsec
+      ports:
+        - "8080:8080"
+        - "6060:6060"
+      volumes:
+        - "{{ project_directory }}/crowdsec/config/crowdsec:/etc/crowdsec"
+        - "{{ project_directory }}/crowdsec/data/:/var/lib/crowdsec/data"
+      env:
+        DISABLE_ONLINE_API: 'true'
+
+
+  when: crowdsec_lapi is defined and crowdsec_lapi | bool
+  tags:
+    - crowdsec-lapi
+    - crowdsec-agent
+
+- name: Install Crowdsec Agent
+  block:
+  
+  - name: Install LAPI Agent
+    include_role:
+      name: generic-setup-docker-container
+    vars:
+      name: crowdsec-agent
+      image: crowdsecurity/crowdsec
+      networks: 
+        - name: "crowdsec"
+      ports:
+        - "6060:6060"
+      internal_volumes_list: 
+        - "{{ project_directory }}/crowdsec/config/crowdsec:/etc/crowdsec"
+        - "{{ project_directory }}/crowdsec/data/:/var/lib/crowdsec/data"
+      volumes: "{{ internal_volumes_list + crowdsec_file_mounts | default([]) }}"
+      env:
+        DISABLE_ONLINE_API: 'true'
+        DISABLE_LOCAL_API: 'true'
+        AGENT_USERNAME: "{{ inventory_hostname }}"
+        AGENT_PASSWORD: "{{ vault_crowdsec_agent_password[inventory_hostname] }}"
+        LOCAL_API_URL: "{{ crowdsec_agent_lapi_url }}"
+        COLLECTIONS: "{{ crowdsec_collections | default() }}"
+
+
+  # Copying config must go after inital docker since we'll run into issue #1261 on creation
+  - name: Copy agent config
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - {src: agent-config.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/config.yaml"}
+      - {src: agent-local_api_credentials.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/local_api_credentials.yaml"}
+      - {src: agent-acquis.yaml.j2, dest: "{{ project_directory }}/crowdsec/config/crowdsec/acquis.yaml"}
+    notify: restart crowdsec-agent
+
+  - name: Copy Authentik parsers and scenarios
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+    with_items:
+      - {src: agent-authentik-parser.yaml, dest: "{{ project_directory }}/crowdsec/config/crowdsec/parsers/s01-parse/authentik-logs.yaml"}
+      - {src: agent-authentik-scenario-bf.yaml, dest: "{{ project_directory }}/crowdsec/config/crowdsec/scenarios/authentik-bf.yaml"}
+      - {src: agent-authentik-scenario-user_enum.yaml, dest: "{{ project_directory }}/crowdsec/config/crowdsec/scenarios/authentik-user_enum.yaml"}
+    when: crowdsec_agent_type is defined and "authentik" in crowdsec_agent_type
+    notify: restart crowdsec-agent
+
+  - name: Check if agent is registered
+    delegate_to: sec-01
+    command:
+      cmd: docker exec crowdsec-lapi cscli machines list -o raw
+    register: registration_response
+    changed_when: false
+
+  - name: Handle LAPI registration
+    block:
+    - name: Add machine name to LAPI
+      delegate_to: sec-01
+      command:
+        cmd: "docker exec crowdsec-lapi cscli machines add {{ inventory_hostname }} --password {{ vault_crowdsec_agent_password[inventory_hostname] }} --file /tmp/creds-{{ inventory_hostname }}"
+      register: lapi_register
+      failed_when: lapi_register.rc not in [0]
+    when: inventory_hostname not in registration_response.stdout
+
+  - name: Validate agent on LAPI
+    delegate_to: sec-01
+    command:
+      cmd: "docker exec crowdsec-lapi cscli machines validate {{ inventory_hostname }}"
+    register: lapi_verify
+    failed_when: lapi_verify.rc not in [0]
+    changed_when: false
+
+  when: crowdsec_lapi is undefined or not crowdsec_lapi | bool
+  tags:
+    - crowdsec-agent

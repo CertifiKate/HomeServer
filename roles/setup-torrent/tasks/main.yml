@@ -1,0 +1,58 @@
+---
+- block:
+  - name: Ensure qbittorrent directory exists
+    file:
+      path: "{{project_directory}}/qbittorrent/config/wireguard"
+      state: directory
+
+  - name: Add wireguard config
+    copy:
+      dest: "{{ project_directory }}/qbittorrent/config/wireguard/wg0.conf"
+      src: "files/wireguard.conf"
+
+  - name: Set qbittorrent data files with proper owners and permissions
+    file:
+      path: "{{ project_directory }}/qbittorrent/"
+      owner: "{{ qbittorrent_container_uid }}"
+      group: "{{ qbittorrent_container_gid }}"
+      recurse: "yes" 
+
+  - name: Create qbittorrent docker container
+    community.docker.docker_container:
+      debug: true
+      name: qbittorrent
+      image: binhex/arch-qbittorrentvpn
+      pull: '{{ docker_pull }}'
+      recreate: '{{ docker_recreate }}'
+      hostname: qbittorrent
+      container_default_behavior: compatibility
+      restart_policy: unless-stopped
+      sysctls: { "net.ipv4.conf.all.src_valid_mark": "1" }
+      privileged: true
+      networks_cli_compatible: true
+      network_mode: torrent
+      capabilities:
+        - NET_ADMIN
+      networks:
+        - name: torrent
+      state: started
+      volumes:
+        - "{{ project_directory }}/qbittorrent/config/:/config/"
+        - "{{ media_directory }}/Downloads:/data/Downloads"
+      ports:
+        - "8080:8080"
+      env:
+        PUID: "{{ qbittorrent_container_uid }}"
+        PGID: "{{ qbittorrent_container_gid }}"
+        WEBUI_PORT: "8080"
+        VPN_ENABLED: "yes"
+        LAN_NETWORK: "10.0.0.0/24"
+        VPN_PROV: "custom"
+        VPN_CLIENT: "wireguard"
+      healthcheck:
+        # Check that we can access externally (i.e VPN is working)
+        test: ["CMD", "/usr/bin/curl", "http://www.google.com"]
+        timeout: 10s
+        interval: 30s
+        retries: 5
+  tags: qbittorrent

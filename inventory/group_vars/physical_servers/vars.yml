@@ -1,0 +1,5 @@
+remote_user: "ansible"
+
+ansible_user: "{{ remote_user }}"
+
+scripts_directory: "/scripts"

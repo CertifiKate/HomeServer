@@ -1,0 +1,7 @@
+---
+- name: Restart cloudflareDDNS
+  community.docker.docker_container:
+    name: cloudflareddns
+    container_default_behavior: compatibility
+    restart: yes
+  listen: restart cloudflareddns

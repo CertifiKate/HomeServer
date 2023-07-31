@@ -1,0 +1,9 @@
+timezone: "Australia/Adelaide"
+docker_recreate: false
+docker_pull: false
+
+project_directory: "{{ project_root_directory }}/apps"
+
+ansible_python_interpreter: "/usr/bin/python3"
+
+pve_ansible_pubkey: '{{ vault_pve_ansible_pubkey }}'

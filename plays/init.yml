@@ -1,0 +1,35 @@
+---
+# Sets up environment for ansible host/controller
+- name: Create SSH config for all LXCs
+  hosts: localhost
+  gather_facts: false
+  become: false
+  tasks:
+  - name: Add includes to SSH config
+    lineinfile:
+      path: "~/.ssh/config"
+      line: "Include ~/.ssh/includes/*"
+      insertbefore: BOF
+  - file:
+      path: "~/.ssh/includes"
+      state: directory
+  # TODO: Add private key config
+
+  - name: Create SSH config file
+    copy:
+      dest: "~/.ssh/includes/ansible-hosts.conf"
+      content: |
+        {% for host in groups["physical_servers"] %}
+        Host {{ hostvars[host].inventory_hostname }}
+          Hostname {{ hostvars[host].ansible_host }}
+          User {{ hostvars[host].remote_user }}
+          IdentityFile ~/.ssh/ansible-key
+        {% endfor %}
+        {% for host in groups["pve_lxd_containers"] %}
+        Host {{ hostvars[host].inventory_hostname }}
+          Hostname 10.0.0.{{ hostvars[host].vmid }}
+          User {{ hostvars[host].remote_user }}
+          ProxyCommand ssh -p 22 -W %h:%p -q ssh_jump_host@{{ hostvars[hostvars[host].node].ansible_host }} -i ~/.ssh/ansible-key
+          StrictHostKeyChecking=no
+          IdentityFile ~/.ssh/ansible-key
+        {% endfor %}

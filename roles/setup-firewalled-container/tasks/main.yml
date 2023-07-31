@@ -1,0 +1,21 @@
+---
+- name: "Install crontab"
+  apt:
+    pkg:
+      - cron
+    state: latest
+    update_cache: true
+
+- name: Add iptables configs
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: a+x
+  with_items:
+    - {src: iptables.rules.j2, dest: "/etc/iptables.custom.rules"}
+
+- name: Add iptables rules
+  ansible.builtin.cron:
+    name: "Load iptables rules"
+    special_time: reboot
+    job: "/usr/sbin/iptables-restore -n < /etc/iptables.custom.rules"

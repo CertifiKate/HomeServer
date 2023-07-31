@@ -1,0 +1,13 @@
+lxc_config_dir: '{{ hostvars[node].project_directory }}/{{ inventory_hostname }}'
+lxc_config_device_def:
+  mp0:
+    container_path: "/config/"
+    host_path: "{{ lxc_config_dir }}"
+
+lxc_mounts: |
+  {{ custom_mounts | default({}) | combine( lxc_config_device_def ) }}
+
+lxc_internal_network: 
+      net0: "name=eth0,ip=10.0.0.{{ vmid }}/24,bridge=vmbr1,gw=10.0.0.1"
+lxc_network_interfaces: |
+  {{ custom_networks | default({}) | combine(lxc_internal_network) }}

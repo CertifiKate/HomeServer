@@ -1,0 +1,42 @@
+---
+- name: Ensure Jellyfin Directory Exist
+  file:
+    path: "{{ project_directory }}/jellyfin-local/data/"
+    state: directory
+
+- name: Add Jellyfin GPG key
+  apt_key:
+    url: https://repo.jellyfin.org/debian/jellyfin_team.gpg.key
+    state: present
+    keyring: /usr/share/keyrings/jellyfin.gpg
+
+- name: Add Jellyfin repository to apt
+  apt_repository:
+    repo: deb [arch=amd64 signed-by=/usr/share/keyrings/jellyfin.gpg] https://repo.jellyfin.org/debian bullseye main
+    filename: jellyfin
+    state: present
+    update_cache: no
+
+- name: Add custom config
+  template:
+    src: "jellyfin-config.json"
+    dest: "/usr/share/jellyfin/web/config.json"
+
+- name: Install Jellyfin
+  apt:
+    pkg:
+    - jellyfin
+    state: latest
+    update_cache: yes
+
+- name: Customise init file
+  lineinfile:
+    path: /etc/systemd/system/jellyfin.service
+    line: ExecStart = /usr/bin/jellyfin --webdir /usr/share/jellyfin/web --configdir {{ project_directory }}/jellyfin/config/ --datadir {{ project_directory }}/jellyfin/config/data/
+    search_string: 'ExecStart'
+
+- name: Enable Jellyfin service
+  service:
+    name: jellyfin
+    state: started
+    enabled: yes

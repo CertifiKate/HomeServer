@@ -1,0 +1,30 @@
+---
+
+- name: Setup Servers
+  hosts: physical_servers
+  gather_facts: false
+  become: true
+  tasks:
+  # - name: Setup backups
+  #   include_role:
+  #     name: init-backup
+  #   when: host_no_backup is undefined or not host_no_backup | bool
+
+  - name: Enable snapraid cron jobs
+    when: host_uses_snapraid is defined and host_uses_snapraid | bool
+    tags:
+      - snapraid
+    block:
+      - name: Run snapraid sync daily
+        ansible.builtin.cron:
+          name: "Daily snapraid sync at 5am"
+          minute: "0"
+          hour: "5"
+          job: "snapraid sync"
+
+      - name: Run snapraid scrub every second day
+        ansible.builtin.cron:
+          name: "Regular snapraid scrub"
+          hour: "3"
+          weekday: "1,3,5"
+          job: "snapraid scrub"
