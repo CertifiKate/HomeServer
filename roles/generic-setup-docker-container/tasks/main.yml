@@ -17,7 +17,7 @@
       hostname: '{{ name | mandatory }}'
       container_default_behavior: compatibility
       restart_policy: unless-stopped
-      network_mode: default
+      network_mode: '{{ network_mode | default("default") }}'
       capabilities:
         '{{ capabilities | default([]) }}'
       networks: 
@@ -29,6 +29,8 @@
       command: '{{ command | default() }}'
       env:
         '{{ env | default({}) }}'
+      env_file:
+        '{{ env_file | default(omit) }}'
       devices:
         '{{ devices | default([]) }}'
   tags: always

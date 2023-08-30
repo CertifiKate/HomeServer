@@ -1,5 +1,9 @@
 http:
   middlewares:
+    allowIFrame:
+      headers:
+        customrequestheaders:
+          X-Frame-Options: ""
     customErrorPages:
       errors:
         status:
@@ -83,6 +87,7 @@ http:
       priority: {{ service.priority | default(10) }}
       middlewares:
         - customErrorPages
+        - allowIFrame
 {%  if service.proxyAuth is undefined or service.proxyAuth %}
         - authentikProxyAuth
 {%  endif%}

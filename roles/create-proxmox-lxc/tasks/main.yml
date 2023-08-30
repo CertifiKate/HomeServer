@@ -19,6 +19,7 @@
     onboot: '{{ onboot | default(true) }}'
     pubkey: '{{ pve_ansible_pubkey }}'
     unprivileged: '{{ pve_unprivileged | default(true) }}'
+    pool: "apps"
     netif:
       '{{ lxc_network_interfaces }}'
     features:

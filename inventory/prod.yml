@@ -100,6 +100,7 @@ all:
           - setup-monitoring
           - setup-cloudflare-ddns
           - setup-vikunja
+          - setup-recipes
 
         code-01:
           vmid: 135
@@ -234,6 +235,13 @@ all:
               destScheme: http
               destHost: util-01
               destPort: '3300'
+              proxyAuth: false
+
+            - name: tandoor
+              host: 'recipes.{{ project_tld }}'
+              destScheme: http
+              destHost: util-01
+              destPort: '4001'
               proxyAuth: false
 
             # Media

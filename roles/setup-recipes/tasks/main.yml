@@ -1,0 +1,64 @@
+---
+- name: Ensure recipes directory exists
+  file:
+    path: "{{ project_directory }}/tandoor/{{item}}/"
+    state: directory
+    recurse: true
+    mode: 0777
+  with_items:
+    - db
+    - staticfiles
+    - nginx
+    - mediafiles
+
+
+- name: Ensure recipes env file exists
+  template:
+    src: "./templates/env.j2"
+    dest: "{{ project_directory }}/tandoor/env"
+
+- name: Create tandoor postgres container
+  include_role:
+    name: generic-setup-docker-container
+  vars:
+    name: tandoor_db
+    image: postgres:15-alpine
+    networks:
+      - name: "tandoor"
+    state: started
+    volumes:
+      - "{{ project_directory }}/tandoor/db/:/var/lib/postgresql/data"
+    env_file: "{{ project_directory }}/tandoor/env"
+
+- name: Create tandoor container
+  include_role:
+    name: generic-setup-docker-container
+  vars:
+    name: tandoor_app
+    image: vabene1111/recipes
+    networks:
+      - name: "tandoor"
+    state: started
+    volumes:
+      - "{{ project_directory }}/tandoor/staticfiles/:/opt/recipes/staticfiles"
+      - "{{ project_directory }}/tandoor/nginx/conf.d:/opt/recipes/nginx/conf.d"
+      - "{{ project_directory }}/tandoor/mediafiles:/opt/recipes/mediafiles"
+      - "{{ project_directory }}/tandoor/externalrecipes:/data/externalrecipes"
+    env_file: "{{ project_directory }}/tandoor/env"
+
+- name: Create tandoor container
+  include_role:
+    name: generic-setup-docker-container
+  vars:
+    name: tandoor_webserver
+    image: nginx:mainline-alpine
+    networks:
+      - name: "tandoor"
+    ports:
+      - "4001:80"
+    state: started
+    volumes:
+      - "{{ project_directory }}/tandoor/staticfiles/:/static:ro"
+      - "{{ project_directory }}/tandoor/nginx/conf.d:/etc/nginx/conf.d:ro"
+      - "{{ project_directory }}/tandoor/mediafiles:/media:ro"
+    env_file: "{{ project_directory }}/tandoor/env"
