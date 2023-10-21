@@ -3,3 +3,5 @@ remote_user: "ansible"
 ansible_user: "{{ remote_user }}"
 
 scripts_directory: "/scripts"
+
+ansible_ssh_common_args: '-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=/tmp/ansible-ssh-%h-%p-%r -o ForwardAgent=yes'

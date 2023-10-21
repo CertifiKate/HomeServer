@@ -1,14 +1,31 @@
 ---
+- name: Setup local backup user (for restoring to dev environment)
+  hosts: microwave
+  become: true
+  tasks:
+      - name: Create backup service account user
+        delegate_to: microwave
+        user:
+          name: svc_backup
+          shell: /bin/bash
+
+      - name: Add SSH Key
+        delegate_to: microwave
+        authorized_key:
+          user: svc_backup
+          key: "{{ vault_borgbackup_local_service_key }}"
+          state: present
+
 
 - name: Setup Servers
   hosts: physical_servers
-  gather_facts: false
+  gather_facts: true
   become: true
   tasks:
-  # - name: Setup backups
-  #   include_role:
-  #     name: init-backup
-  #   when: host_no_backup is undefined or not host_no_backup | bool
+  - name: Setup backups
+    include_role:
+      name: init-backup
+    when: host_no_backup is undefined or not host_no_backup | bool
 
   - name: Enable snapraid cron jobs
     when: host_uses_snapraid is defined and host_uses_snapraid | bool

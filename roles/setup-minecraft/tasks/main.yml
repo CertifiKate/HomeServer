@@ -49,7 +49,7 @@
   
   - name: Backup to borg
     include_role: 
-      name: m3nu.ansible_role_borgbackup
+      name: borgbase.ansible_role_borgbackup
     vars:
       borg_encryption_passphrase: "{{ vault_borgbackup_key_minecraft }}"
       borg_repository: "{{ vault_borgbackup_minecraft_repo }}"

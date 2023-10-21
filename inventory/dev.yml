@@ -1,212 +1,34 @@
 all:
   children:
-    # ==== Physical/Cloud Servers ===========
-    servers:
+    proxmox_servers:
       hosts:
-        toast:
-          ansible_host: 192.168.1.6
+        griddle:
+          ansible_host: 192.168.10.25
+          gateway: 192.168.10.1
           ethernet_interface: eno1
           project_root_directory: "/services"
           project_directory: "{{ project_root_directory }}/lxd"
-          media_directory: "/mnt/disk1/Media"
+          media_directory: "/mnt/storage/Media"
+          storage_directory: "/mnt/storage/Storage"
           scripts_directory: "/scripts"
-    # =================================
-
-    # ==== LXD Containers =============
+    physical_servers:
+      hosts:
+        griddle:
+dev:
+  hosts:
+    griddle:
+  children:
     pve_lxd_containers:
       hosts:
-      # == Organised by function ======
-        # Each function has different IP blocks
-
-        # === Core (10-29) ============
-        dns-01:
-          vmid: 111
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          external_ip: '192.168.1.250'
-          memory: 512
-          roles:
-            - setup-dns
-
+        dns-02:
         prox-01:
-          vmid: 115
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          memory: 1024
-          roles:
-            - setup-proxy-traefik
-
         auth-01:
-          vmid: 112
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          memory: 2048
-          roles:
-            - setup-auth
-
         sec-01:
-          vmid: 114
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-
         gate-01:
-          vmid: 113
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          memory: 512
-          roles:
-            - setup-gateway
-
-        # =============================
-        # === Utilty (30-49) ==========
         util-01:
-          vmid: 130
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          memory: 2048
-          roles:
-          - setup-monitoring
-          - setup-cloudflare-ddns
-
         code-01:
-          vmid: 135
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          memory: 2048
-          roles:
-          - setup-coder
-
-        # =============================
-        # === Media (50-59) ===========
+        stor-01:
+        # Requires too many hardware specific devices (second nic, zigbee adapter)
+        # home-01:
         media-01:
-          vmid: 150
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          media_directory: "/data"
-          memory: 4096
-          custom_mounts:
-            mp1: 
-              container_path: "/data"
-              host_path: "{{ hostvars['toast'].media_directory }}"
-          roles:
-            - setup-jellyfin
-
         media-02:
-          vmid: 151
-          node: 'toast'
-          ostemplate: 'debian-11-standard_11.3-1_amd64.tar.zst'
-          media_directory: "/data"
-          memory: 4096
-          custom_mounts:
-            mp1: 
-              container_path: "/data"
-              host_path: "{{ hostvars['toast'].media_directory }}"
-          roles:
-            - setup-media-dl
-            - setup-torrent
-
-    proxy:
-      hosts:
-        prox-01:
-          traefikServices:
-            # Core
-            - name: authentik
-              host: 'auth.{{ project_tld }}'
-              destScheme: https
-              destHost: auth-01
-              destPort: '9443'
-              proxyAuth: false
-            
-            - name: technitium
-              host: 'dns.{{ project_tld }}'
-              destScheme: http
-              destHost: dns-01
-              destPort: '5380'
-              proxyAuth: false
-            
-            - name: wireguard
-              host: 'wgui.{{ project_tld }}'
-              destScheme: http
-              destHost: gate-01
-              destPort: '51821'
-
-            # Util
-            - name: grafana
-              host: 'monitor.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '3000'
-              proxyAuth: false
-
-            - name: influxdb
-              host: 'influxdb.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '8086'
-
-            # Media
-            - name: jellyfin
-              host: 'media.{{ project_tld }}'
-              destScheme: http
-              destHost: media-01
-              destPort: '8096'
-              proxyAuth: false
-
-            - name: jellyseer
-              host: 'jellyseer.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '5055'
-
-            - name: sonarr
-              host: 'sonarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '8989'
-
-            - name: radarr
-              host: 'radarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '7878'
-
-            - name: qbittorrent
-              host: 'torrent.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '8080'
-
-            - name: prowlarr
-              host: 'prowlarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '9696'
-
-    crowdsec_agent:
-      hosts:
-        sec-01:
-          crowdsec_lapi: true
-        auth-01: 
-          crowdsec_agent_type: authentik
-          crowdsec_file_mounts:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-          crowdsec_agent_lapi_url: "http://{{ hostvars[\"sec-01\"].ansible_host }}:8080"
-        prox-01:
-          crowdsec_agent_type: traefik
-          crowdsec_collections: crowdsecurity/traefik
-          crowdsec_file_mounts:
-            - "{{ project_directory }}/traefik/data/:/var/log/traefik/"
-          crowdsec_agent_lapi_url: "http://{{ hostvars[\"sec-01\"].ansible_host }}:8080"
-    crowdsec_bouncer:
-      hosts:
-        toast:
-          # Iptables (all ports, incl. ssh)
-          # May mean we don't need to do anything on prox-01 or gate-01?
-          crowdsec_bouncer_type: iptables
-          crowdsec_bouncer_lapi_url: "http://{{ hostvars[\"sec-01\"].ansible_host }}:8080"
-        # prox-01:
-        #   # Nginx/Iptables
-        # gate-01:
-        #   # Iptables/Wireguard
-        # sec-01:
-          # Cloudflared

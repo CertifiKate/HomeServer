@@ -1,0 +1,68 @@
+# Reset the development environment by removing all LXC containers and configs, then restoring latest backup
+
+- name: Teardown LXC containers
+  hosts: dev:&pve_lxd_containers
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: 
+    block:
+    - name: Stop containers
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: stopped
+        force: true
+      ignore_errors: true
+
+    - name: Remove containers
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: absent
+        purge: true
+        force: true
+      ignore_errors: true
+
+- name: Restore configs from prod backup
+  hosts: dev:&proxmox_servers
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Clear old files
+      # become: true
+      file:
+        path: "{{ project_directory }}"
+        state: absent
+
+    - name: Create folder
+      file:
+        owner: root
+        mode: 0777
+        path: "{{ project_directory }}"
+        state: directory
+
+    - name: Copy ssh key
+      copy:
+        src: ../inventory/group_vars/dev/borg-read-only.key
+        dest: /tmp/borg-key
+
+    - name: Restore from backup
+      become: false
+      shell:
+        cmd: "BORG_PASSPHRASE={{ vault_borgbackup_key_local_services }} borg extract svc_backup@192.168.10.50:/mnt/disk1/Backups/services-local.borg::$(BORG_PASSPHRASE={{ vault_borgbackup_key_local_services }} borg list svc_backup@192.168.10.50:/mnt/disk1/Backups/services-local.borg --last 1 --short --rsh 'ssh -i /tmp/borg-key') --rsh 'ssh -i /tmp/borg-key'"
+        chdir: /home/ansible/
+
+    - name: Move backup to correct spot
+      become: true
+      shell:
+        cmd: "mv /home/ansible/services/* /services"
+
+  tags: restore-config
+
+- name: Re-provision proxmox
+  import_playbook: provision_proxmox.yml

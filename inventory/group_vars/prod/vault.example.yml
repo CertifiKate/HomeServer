@@ -1,0 +1,27 @@
+project_tld: URL
+
+vault_pve_ansible_pubkey: SSH PUB KEY
+vault_pve_api_user: USER
+vault_pve_api_password: PASSWORD
+
+vault_authelia_jwt_secret: SECRET
+
+vault_tandoor_secret: PASSWORD
+vault_tandoor_db_password: PASS
+
+vault_cloudflare_email: EMAIL
+
+vault_wg_pass: PASSWORD
+
+vault_coder_prostgres_user: USER
+vault_coder_prostgres_password: PASSWORD
+vault_coder_postgres_db: DATABASE_NAME
+
+vault_coder_proxmox_token_id: PVE_TOKEN_ID
+vault_coder_proxmox_token_secret: SECRET
+
+vault_coder_ssh_key_pub: PUB_KEY 
+
+vault_vikunja_db_root_pw: PASSWORD
+vault_vikunja_db_vikunja_pw: PASSWORD
+vault_vikunja_jwtsecret: PASSWORD

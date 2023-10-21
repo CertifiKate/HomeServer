@@ -112,7 +112,7 @@ provider "coder" {
 }
 
 provider "proxmox" {
-  pm_api_url = "https://{{ hostvars["microwave"].ansible_host }}:8006/api2/json"
+  pm_api_url = "https://{{ hostvars['microwave'].ansible_host }}:8006/api2/json"
   pm_api_token_id = "{{ vault_coder_proxmox_token_id }}"
   pm_api_token_secret = "{{ vault_coder_proxmox_token_secret }}"
 }
@@ -181,7 +181,7 @@ resource "proxmox_lxc" "container" {
   target_node   = "microwave"
   pool          = "coder"
   hostname      = "${lower(data.coder_workspace.me.name)}-coder"
-  ostemplate    = "local:vztmpl/debian-11-standard_11.3-1_amd64.tar.zst"
+  ostemplate    = "local:vztmpl/{{ debian_template }}"
   unprivileged  = true
   start         = true
 

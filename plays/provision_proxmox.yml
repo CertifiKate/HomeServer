@@ -73,20 +73,21 @@
             post-up   echo 1 > /proc/sys/net/ipv4/ip_forward
             post-up   iptables -t nat -A POSTROUTING -s '10.0.101.0/24' -o vmbr0 -j MASQUERADE
             post-down iptables -t nat -D POSTROUTING -s '10.0.101.0/24' -o vmbr0 -j MASQUERADE
-        
 
+          {% if ethernet_secondary_interface is defined %}
           # Connect second NIC to guest/IOT wifi (for Home Assistant)
-          auto enp1s0
-          iface enp1s0 inet manual
+          auto {{ ethernet_secondary_interface }}
+          iface {{ ethernet_secondary_interface }} inet manual
 
           auto vmbr2
           iface vmbr2 inet static
             address 192.168.200.2/24
             gateway 192.168.200.1
-            bridge-ports enp1s0
+            bridge-ports {{ ethernet_secondary_interface }}
             bridge-stp off
             bridge-fd 0
 
+          {% endif%}
       register: proxmoxNetwork
     
     - block:
@@ -207,11 +208,10 @@
 
     - name: Restart Jellyfin
       become: false
-      delegate_to: local
       connection: local
       community.general.proxmox:
         vmid: "{{ hostvars['media-01'].vmid }}"
-        api_user: "{{ hostvars['media-01'].pve_api_user }}"
-        api_password: "{{ hostvars['media-01'].pve_api_password }}"
-        api_host: "{{ hostvars['media-01'].ansible_host }}"
+        api_user: '{{ pve_api_user }}'
+        api_password: '{{ pve_api_password }}'
+        api_host: '{{ ansible_host }}'
         state: restarted

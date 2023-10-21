@@ -33,12 +33,14 @@
   # Backup locally for convenience and rollback - NOT for disaster 
   - name: Setup local services backup
     include_role: 
-      name: m3nu.ansible_role_borgbackup
+      name: borgbase.ansible_role_borgbackup
     vars:
       borg_repository: 
         - "{{ local_borg_repo_services }}"
       borg_source_directories:
         - "{{ project_directory }}"
+      borg_user: svc_backup
+      borg_group: svc_backup
       borg_encryption_passphrase: "{{ vault_borgbackup_key_local_services }}"
       borgmatic_config_name: "local-services-backup.yml"
       borgmatic_cron_name: "borgmatic-local"
@@ -63,7 +65,7 @@
 
 - name: Setup remote services backup
   include_role: 
-    name: m3nu.ansible_role_borgbackup
+    name: borgbase.ansible_role_borgbackup
   vars:
     borg_encryption_passphrase: "{{ vault_borgbackup_key_services }}"
     borg_repository: "{{ vault_borgbackup_repo }}"

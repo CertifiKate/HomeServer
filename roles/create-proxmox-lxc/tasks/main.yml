@@ -10,7 +10,7 @@
     api_password: '{{ pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
     password: '{{ password | default(omit) }}'
-    hostname: '{{ inventory_hostname }}'
+    hostname: '{{ inventory_hostname + "-dev" if node in groups["dev"] else "" }}'
     ostemplate: 'local:vztmpl/{{ ostemplate }}'
     storage: 'local-lvm'
     cores: '{{ cores | default(1) }}'
@@ -39,7 +39,8 @@
         recurse: true
       loop: "{{ lxc_mounts | dict2items }}"
       loop_control:
-        label: "{{ item.value.host_path }}"
+        label: "{{ item.value.host_path | default(omit) }}"
+      ignore_errors: true
 
     - name: Add mount points
       command:
@@ -51,3 +52,4 @@
       loop: "{{ lxc_mounts | dict2items }}"
       loop_control:
         label: "{{ item.value.host_path }} -> {{ item.value.container_path }}"
+      ignore_errors: true

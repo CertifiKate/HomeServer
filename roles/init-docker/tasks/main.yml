@@ -56,6 +56,6 @@
   notify: restart docker-service
 
 - name: Intall docker module for python
-  pip:
-    name: "docker"
+  apt:
+    name: "python3-docker"
   tags: dockerSetup
