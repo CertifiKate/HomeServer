@@ -4,28 +4,20 @@
     name: papanito.cloudflared
   vars:
     cf_remove_unused_tunnel: true
-    cf_download_baseurl: https://pkg.cloudflare.com
-    cf_cert_location: group_vars/servers/cloudflared-cert.pem
+    cf_cert_location: cloudflared-cert.pem
     cf_os_package_enable: true
-    cf_repository: deb http://pkg.cloudflare.com/ buster main
     cf_tunnels:
-      tunnel01:
+      tunnel02:
+        routes:
+          dns:
+            - "{{ vault_homeassistant_external_hostname }}"
         account_tag: '{{ vault_cloudflare_tunnel_account_tag }}'
         tunnel_secret: '{{ vault_cloudflare_tunnel_secret }}'
         tunnel_id: '{{ vault_cloudflare_tunnel_id }}'
-        routes:
-          dns:
-            - "auth"
-            - "jellyseer"
-            - "storage"
         ingress:
-        # Cloudflared is using our internal DNS so it should work like this
-          - hostname: "auth.{{ project_tld }}"
-            service: "https://auth.{{ project_tld }}"
-          - hostname: "storage.{{ project_tld }}"
-            service: "https://storage.{{ project_tld }}"
-          - hostname: "jellyseer.{{ project_tld }}"
-            service: "https://jellyseer.{{ project_tld }}"          
+          # Use cloudflare as reverse proxy for home assistant externally
+          - hostname: "{{ vault_homeassistant_external_hostname }}.{{ project_tld }}"
+            service: "http://{{ hostvars['home-01'].ansible_host }}:8743"
           - service: "http_status:404"
   tags: 
     - cloudflared

@@ -1,6 +1,6 @@
 - name: Setup services
   hosts: pve_lxd_containers
-  gather_facts: false
+  gather_facts: true
   order: sorted
   tasks:
     - name: Run roles

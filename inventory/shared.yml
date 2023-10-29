@@ -67,7 +67,7 @@ all:
           ostemplate: '{{ debian_template }}'
           memory: 512
           roles:
-            - setup-gateway
+            - setup-cloudflared
 
         # =============================
         # === Utilty (30-49) ==========
