@@ -4,22 +4,24 @@
 
 all:
   children:
+    dev:
+    prod:
     # ==== LXC Containers =============
-    pve_lxd_containers:
+    lxc_containers:
       hosts:
       # == Organised by function ======
         # Each function has different IP blocks
 
         # === Core (10-29) ============
         # Internal-only DNS
-        dns-01:
-          vmid: 111
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          uses_docker: false
-          memory: 512
-          roles:
-            - setup-dnsmasq
+        # dns-01:
+        #   vmid: 111
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   uses_docker: false
+        #   memory: 512
+        #   roles:
+        #     - setup-dnsmasq
 
         dns-02:
           vmid: 116
@@ -50,16 +52,11 @@ all:
 
         # auth-02:
         #   vmid: 117
+
+        # sec-01:
+        #   vmid: 114
         #   node: '{{ host_server }}'
         #   ostemplate: '{{ debian_template }}'
-        #   memory: 1024
-        #   roles:
-        #     - setup-authelia
-
-        sec-01:
-          vmid: 114
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
 
         gate-01:
           vmid: 113
@@ -68,19 +65,20 @@ all:
           memory: 512
           roles:
             - setup-cloudflared
+            - setup-cloudflare-ddns
 
         # =============================
         # === Utilty (30-49) ==========
-        util-01:
-          vmid: 130
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 2048
-          roles:
-          - setup-monitoring
-          # - setup-cloudflare-ddns
-          - setup-vikunja
-          - setup-recipes
+        # util-01:
+        #   vmid: 130
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   memory: 2048
+        #   roles:
+        #   - setup-monitoring
+        #   # - setup-cloudflare-ddns
+        #   - setup-vikunja
+        #   - setup-recipes
 
         code-01:
           vmid: 135
@@ -97,6 +95,7 @@ all:
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 2048
+          storage_directory: "/data"
           custom_mounts:
             mp1: 
               container_path: "/data"
@@ -189,13 +188,6 @@ all:
               destScheme: http
               destHost: code-01
               destPort: '7080'
-              proxyAuth: false
-
-            - name: nextcloud
-              host: 'storage.{{ project_tld }}'
-              destScheme: https
-              destHost: 'stor-01'
-              destPort: '443'
               proxyAuth: false
 
             - name: vikunja-api
@@ -295,7 +287,7 @@ all:
         media-02:
     utility:
       hosts:
-        util-01:
+        # util-01:
         home-01:
         code-01:
         stor-01:
@@ -304,5 +296,5 @@ all:
         dns-02:
         prox-01:
         auth-01:
-        sec-01:
+        # sec-01:
         gate-01:

@@ -44,3 +44,16 @@
       tags:
         - never
         - restart-lxc
+
+
+- name: Manage dev servers
+  hosts: dev:&proxmox_servers
+  gather_facts: false
+  tasks:
+    - name: Wake dev server
+      delegate_to: microwave
+      wakeonlan:
+        mac: '{{ vault_server_mac[inventory_hostname] }}'
+      tags:
+      - never
+      - wol-dev

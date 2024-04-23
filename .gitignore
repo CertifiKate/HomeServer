@@ -1,4 +1,5 @@
 ansible.code-workspace
 group_vars/servers/cloudflared-cert.pem
 roles/borgbase.ansible_role_borgbackup/
+roles/papanito.cloudflared/
 *.log

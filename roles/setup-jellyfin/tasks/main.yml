@@ -31,7 +31,7 @@
 
 - name: Customise init file
   lineinfile:
-    path: /etc/systemd/system/jellyfin.service
+    path: /etc/systemd/system/jellyfin.service.d/override.conf
     line: ExecStart = /usr/bin/jellyfin --webdir /usr/share/jellyfin/web --configdir {{ project_directory }}/jellyfin/config/ --datadir {{ project_directory }}/jellyfin/config/data/
     search_string: 'ExecStart'
 

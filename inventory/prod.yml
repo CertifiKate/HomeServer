@@ -37,12 +37,13 @@ prod:
           wireguard_port: "{{ cloud01_wireguard_port }}"
     pve_lxd_containers:
       hosts:
-        dns-01:
+        dns-02:
         prox-01:
         auth-01:
-        sec-01:
+        auth-02:
+        # sec-01:
         gate-01:
-        util-01:
+        # util-01:
         code-01:
         stor-01:
         home-01:
