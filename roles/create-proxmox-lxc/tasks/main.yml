@@ -10,7 +10,7 @@
     api_password: '{{ pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
     password: '{{ password | default(omit) }}'
-    hostname: '{{ inventory_hostname + "-dev" if node in groups["dev"] else "" }}'
+    hostname: '{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
     ostemplate: 'local:vztmpl/{{ ostemplate }}'
     storage: 'local-lvm'
     cores: '{{ cores | default(1) }}'

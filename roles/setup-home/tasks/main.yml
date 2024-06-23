@@ -14,10 +14,9 @@
     vars:
       name: homeassistant
       image: "ghcr.io/home-assistant/home-assistant:stable"
-      networks:
-        - name: homeassistant
       ports:
         - 8743:8123
+      network_mode: 'host'
       devices:
         - /dev/ttyACM0:/dev/ttyACM0
       volumes:

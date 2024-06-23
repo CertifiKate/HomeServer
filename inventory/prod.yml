@@ -39,11 +39,12 @@ prod:
       hosts:
         dns-02:
         prox-01:
+        avahi-01:
         auth-01:
         auth-02:
         # sec-01:
         gate-01:
-        # util-01:
+        util-01:
         code-01:
         stor-01:
         home-01:

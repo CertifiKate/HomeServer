@@ -50,8 +50,15 @@ all:
           roles:
             - setup-auth
 
-        # auth-02:
-        #   vmid: 117
+
+        avahi-01:
+          vmid: 118
+          node: '{{ host_server }}'
+          ostemplate: '{{ debian_template }}'
+          uses_docker: false
+          memory: 512
+          roles:
+            - setup-avahi
 
         # sec-01:
         #   vmid: 114
@@ -69,16 +76,16 @@ all:
 
         # =============================
         # === Utilty (30-49) ==========
-        # util-01:
-        #   vmid: 130
-        #   node: '{{ host_server }}'
-        #   ostemplate: '{{ debian_template }}'
-        #   memory: 2048
-        #   roles:
-        #   - setup-monitoring
-        #   # - setup-cloudflare-ddns
-        #   - setup-vikunja
-        #   - setup-recipes
+        util-01:
+          vmid: 130
+          node: '{{ host_server }}'
+          ostemplate: '{{ debian_template }}'
+          memory: 2048
+          roles:
+          - setup-monitoring
+          # - setup-cloudflare-ddns
+          - setup-vikunja
+          - setup-recipes
 
         code-01:
           vmid: 135

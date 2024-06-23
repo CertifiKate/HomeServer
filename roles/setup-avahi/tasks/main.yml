@@ -1,0 +1,29 @@
+---
+
+- name: Install and setup avahi
+  block:
+
+    - name: Install Avahi Daemon
+      apt:
+        pkg:
+        - 'avahi-daemon'
+        state: latest
+        update_cache: yes
+
+    - name: Configure Avahi
+      template:
+        src: avahi-daemon.conf.j2
+        dest: /etc/avahi/avahi-daemon.conf
+      register: avahiConfig
+
+    - name: Restart Avahi
+      service:
+        name: avahi-daemon.service
+        state: restarted
+      when: avahiConfig.changed
+  
+    - name: Enable and start avahi-daemon service
+      service:
+        name: avahi-daemon.service
+        state: started
+        enabled: yes

@@ -47,13 +47,6 @@
     enabled: yes   
   tags: dockerSetup
 
-- name: Copy docker daemon.json file
-  copy:
-    src: "./templates/daemon.json"
-    dest: "/etc/docker/daemon.json"
-  tags: 
-  - dockerSetup
-  notify: restart docker-service
 
 - name: Intall docker module for python
   apt:

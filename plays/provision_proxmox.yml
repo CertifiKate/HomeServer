@@ -88,11 +88,11 @@
 
           auto vmbr2
           iface vmbr2 inet static
-            address 192.168.200.2/24
-            gateway 192.168.200.1
             bridge-ports {{ ethernet_secondary_interface }}
             bridge-stp off
             bridge-fd 0
+            bridge-vlan-aware yes
+            bridge-vids 2-4094
 
           {% endif%}
       register: proxmoxNetwork

@@ -3,7 +3,7 @@
   include_role:
     name: papanito.cloudflared
   vars:
-    cf_remove_unused_tunnel: true
+    cf_remove_unused_tunnel: false
     cf_cert_location: cloudflared-cert.pem
     cf_os_package_enable: true
     cf_tunnels:
@@ -17,7 +17,7 @@
         ingress:
           # Use cloudflare as reverse proxy for home assistant externally
           - hostname: "{{ vault_homeassistant_external_hostname }}.{{ project_tld }}"
-            service: "http://{{ hostvars['home-01'].ansible_host }}:8743"
+            service: "http://{{ hostvars['home-01'].ansible_host }}:8123"
           - service: "http_status:404"
   tags: 
     - cloudflared
