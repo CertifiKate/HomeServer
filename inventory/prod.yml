@@ -3,10 +3,10 @@ all:
     proxmox_servers:
       hosts:
         microwave:
-          ansible_host: 192.168.10.50
-          gateway: 192.168.10.1
-          ethernet_interface: enp0s31f6
-          ethernet_secondary_interface: enp1s0
+          ansible_host: 192.168.0.5
+          gateway: 192.168.0.1
+          mgmt_interface: enp0s31f6
+          ethernet_interface: enp1s0
           project_root_directory: "/services"
           project_directory: "{{ project_root_directory }}/lxd"
           # Use direct disk rather than MergerFS endpoint just incase that has failed
@@ -41,12 +41,7 @@ prod:
         prox-01:
         avahi-01:
         auth-01:
-        auth-02:
-        # sec-01:
-        gate-01:
         util-01:
-        code-01:
-        stor-01:
         home-01:
         media-01:
         media-02:

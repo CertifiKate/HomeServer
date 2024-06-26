@@ -8,6 +8,6 @@ lxc_mounts: |
   {{ custom_mounts | default({}) | combine( lxc_config_device_def ) }}
 
 lxc_internal_network: 
-      net0: "name=eth0,ip=10.0.0.{{ vmid }}/24,bridge=vmbr1,gw=10.0.0.1"
+  net0: "name=eth0,ip=192.168.10.{{ vmid }}/24,bridge=vmbr2,gw=192.168.10.1,tag=10"
 lxc_network_interfaces: |
   {{ custom_networks | default({}) | combine(lxc_internal_network) }}

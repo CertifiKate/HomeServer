@@ -20,69 +20,11 @@
           iface lo inet loopback
 
           auto {{ ethernet_interface }}
-          iface {{ ethernet_interface }} inet manual
-
-          auto vmbr0
-          iface vmbr0 inet static
+          iface {{ ethernet_interface }} inet static
             address {{ ansible_host }}/24
             gateway {{ gateway }}
-            bridge-ports {{ ethernet_interface }}
-            bridge-stp off
-            bridge-fd 0
-
-          auto vmbr1
-          iface vmbr1 inet static
-            address  10.0.0.1/24
-            bridge-ports none
-            bridge-stp off 
-            bridge-fd 0
-
-            # NAT our internal ct network
-            post-up   echo 1 > /proc/sys/net/ipv4/ip_forward
-            post-up   iptables -t nat -A POSTROUTING -s '10.0.0.0/24' -o vmbr0 -j MASQUERADE
-            post-down iptables -t nat -D POSTROUTING -s '10.0.0.0/24' -o vmbr0 -j MASQUERADE 
-
-            # Port forwards
-            # 80 & 443 -> prox-01
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 80 -j DNAT --to {{ hostvars['prox-01'].ansible_host }}:80
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 80 -j DNAT --to {{ hostvars['prox-01'].ansible_host }}:80
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 443 -j DNAT --to {{ hostvars['prox-01'].ansible_host }}:443
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 443 -j DNAT --to {{ hostvars['prox-01'].ansible_host }}:443
-
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 3043 -j DNAT --to {{ hostvars['util-01'].ansible_host }}:12034
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 3043 -j DNAT --to {{ hostvars['util-01'].ansible_host }}:12034
-
-            # 8096 -> media-01 (jellyfin)
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 8096 -j DNAT --to {{ hostvars['media-01'].ansible_host }}:8096
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 8096 -j DNAT --to {{ hostvars['media-01'].ansible_host }}:8096
-
-            # 1883 -> home-01 (MQTT)
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 1883 -j DNAT --to {{ hostvars['home-01'].ansible_host }}:1883
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 1883 -j DNAT --to {{ hostvars['home-01'].ansible_host }}:1883
-
-            # 51820 -> gate-01 (wireguard)
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 51820 -j DNAT --to {{ hostvars['gate-01'].ansible_host }}:51820
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 51820 -j DNAT --to {{ hostvars['gate-01'].ansible_host }}:51820
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 51821 -j DNAT --to {{ hostvars['gate-01'].ansible_host }}:51821
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 51821 -j DNAT --to {{ hostvars['gate-01'].ansible_host }}:51821
-
-            # 8555 -> home-01 (home assistant - webrtc)
-            post-up   iptables -t nat -A PREROUTING -i vmbr0 -p tcp --dport 8555 -j DNAT --to {{ hostvars['home-01'].ansible_host }}:8555
-            post-down iptables -t nat -D PREROUTING -i vmbr0 -p tcp --dport 8555 -j DNAT --to {{ hostvars['home-01'].ansible_host }}:8555
-
-          # Coder bridge
-          auto vmbr101
-          iface vmbr101 inet static
-            address  10.0.101.1/24
-            bridge-ports none
-            bridge-stp off 
-            bridge-fd 0
-            post-up   echo 1 > /proc/sys/net/ipv4/ip_forward
-            post-up   iptables -t nat -A POSTROUTING -s '10.0.101.0/24' -o vmbr0 -j MASQUERADE
-            post-down iptables -t nat -D POSTROUTING -s '10.0.101.0/24' -o vmbr0 -j MASQUERADE
 
           {% if ethernet_secondary_interface is defined %}
-          # Connect second NIC to guest/IOT wifi (for Home Assistant)
           auto {{ ethernet_secondary_interface }}
           iface {{ ethernet_secondary_interface }} inet manual
 

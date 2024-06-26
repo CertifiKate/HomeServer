@@ -46,7 +46,7 @@
         PGID: "{{ qbittorrent_container_gid }}"
         WEBUI_PORT: "8080"
         VPN_ENABLED: "yes"
-        LAN_NETWORK: "10.0.0.0/24"
+        LAN_NETWORK: "192.168.10.0/24"
         VPN_PROV: "custom"
         VPN_CLIENT: "wireguard"
       healthcheck:

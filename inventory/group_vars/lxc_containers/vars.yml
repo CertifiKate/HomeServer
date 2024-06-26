@@ -6,9 +6,10 @@ project_root_directory: "/config"
 uses_docker: yes
 pve_api_user: '{{ vault_pve_api_user }}'
 pve_api_password: '{{ vault_pve_api_password }}'
-pve_internal_ip: '10.0.0.{{ vmid }}'
+vmid: '1{{ id }}'
+pve_internal_ip: '192.168.10.{{ id }}'
 ansible_host: '{{ pve_internal_ip }}'
-ansible_ssh_common_args: '-o ProxyCommand="ssh -p 22 -W %h:%p -q ssh_jump_host@{{ hostvars[node].ansible_host }}" -o StrictHostKeyChecking=no'
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
 # Container UID/GID
 sonarr_container_gid: '2004'
