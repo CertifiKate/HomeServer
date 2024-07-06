@@ -1,0 +1,31 @@
+
+- name: Provision Proxmox LXC Containers
+  hosts: lxc_containers
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: Create LXCs
+    include_role:
+      name: create-proxmox-container
+
+
+- name: Initialise base config for containers
+  hosts: lxc_containers
+  connection: ssh
+  gather_facts: false
+  become: true
+  tasks:
+  - name: Setup NixOS Config
+    include_role:
+      name: setup-nix-container
+
+  # - name: Configure Nix containers
+  #   block:
+
+
+# - name: Provision Proxmox VMs
+#   hosts: lxc_containers
+#   connection: local
+#   gather_facts: false
+#   tasks:
+#   - name: Add LXCs

@@ -1,43 +1,50 @@
-# Used to define the configs of the LXC containers
-# Dev and Prod should always have the same LXC configs, but the host and 
-# We create these on different bare metal servers
+# Used to define the configs of all PVE containers (LXC and VM)
+# Dev and Prod should always have the same LXC configs, but the host and certain config options may need to be different
 
 all:
   children:
     dev:
     prod:
-    # ==== LXC Containers =============
-    lxc_containers:
-      hosts:
-      # == Organised by function ======
-        # Each function has different IP blocks
 
-        # === Core (10-29) ============
-        dns-02:
-          id: 16
+    lxc:
+      hosts:
+
+      # ======== Core Services =========
+        dns-01:
+          id: 111
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          uses_docker: false
-          memory: 512
-          roles:
-            - setup-dnsmasq
+          os_type: 'nix'
+          memory: 1024
+          # TODO: Add nix configs
 
         prox-01:
-          id: 15
+          id: 112
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
+          os_type: 'nix'
           memory: 1024
-          roles:
-            - setup-proxy-traefik
+          nix_configs:
+            - traefik
 
         auth-01:
-          id: 12
+          id: 113
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 2048
-          roles:
-            - setup-auth
+          os_type: 'nix'
+          memory: 1024
+          nix_configs:
+            - authelia
 
+
+
+      # # == Organised by function ======
+      #   # Each function has different IP blocks
+
+        # prox-01:
+        #   id: 15
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   memory: 1024
+        #   roles:
+        #     - setup-proxy-traefik
 
         avahi-01:
           id: 18
@@ -143,33 +150,33 @@ all:
           # proxy_dev_mode: true
           traefikServices:
             # Core
-            - name: authentik
-              host: 'auth.{{ project_tld }}'
-              destScheme: https
-              destHost: auth-01
-              destPort: '9443'
-              proxyAuth: false
+            # - name: authentik
+            #   host: 'auth.{{ project_tld }}'
+            #   destScheme: https
+            #   destHost: auth-01
+            #   destPort: '9443'
+            #   proxyAuth: false
             
-            - name: wireguard
-              host: 'wgui.{{ project_tld }}'
-              destScheme: http
-              destHost: gate-01
-              destPort: '51821'
+            # - name: wireguard
+            #   host: 'wgui.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: gate-01
+            #   destPort: '51821'
 
-            # Util
-            - name: grafana
-              host: 'monitor.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '3000'
-              proxyAuth: false
-              # autheliaAuth: one_factor
+            # # Util
+            # - name: grafana
+            #   host: 'monitor.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: util-01
+            #   destPort: '3000'
+            #   proxyAuth: false
+            #   # autheliaAuth: one_factor
 
-            - name: influxdb
-              host: 'influxdb.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '8086'
+            # - name: influxdb
+            #   host: 'influxdb.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: util-01
+            #   destPort: '8086'
               # autheliaAuth: one_factor
 
             # - name: coder
@@ -241,11 +248,11 @@ all:
               destHost: media-02
               destPort: '8080'
 
-            - name: prowlarr
-              host: 'prowlarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '9696'
+            # - name: prowlarr
+            #   host: 'prowlarr.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: media-02
+            #   destPort: '9696'
 
             - name: calibre-web
               host: 'library.{{ project_tld }}'
@@ -262,11 +269,11 @@ all:
               destPort: '8123'
               proxyAuth: false
 
-            - name: esp-home
-              host: 'esp.{{ project_tld }}'
-              destScheme: http
-              destHost: home-01
-              destPort: '6052'
+            # - name: esp-home
+            #   host: 'esp.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: home-01
+            #   destPort: '6052'
 
     # =============================
     # === Meta-groups =============

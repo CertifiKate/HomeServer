@@ -23,7 +23,6 @@
         Host {{ hostvars[host].inventory_hostname }}
           Hostname {{ hostvars[host].ansible_host }}
           User {{ hostvars[host].remote_user }}
-          IdentityFile ~/.ssh/ansible-key
           ForwardAgent yes
         {% endfor %}
 
@@ -33,7 +32,6 @@
           Hostname 192.168.10.{{ hostvars[host].id }}
           User {{ hostvars[host].remote_user }}
           StrictHostKeyChecking=no
-          IdentityFile ~/.ssh/ansible-key
           ForwardAgent yes
         {% endfor %}
         #==============#

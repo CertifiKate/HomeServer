@@ -6,23 +6,9 @@ project_root_directory: "/config"
 uses_docker: yes
 pve_api_user: '{{ vault_pve_api_user }}'
 pve_api_password: '{{ vault_pve_api_password }}'
-vmid: '1{{ id }}'
+vmid: "{{ '1%04d'|format(id) }}"
 pve_internal_ip: '192.168.10.{{ id }}'
 ansible_host: '{{ pve_internal_ip }}'
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
-# Container UID/GID
-sonarr_container_gid: '2004'
-sonarr_container_uid: '2004'
-
-radarr_container_gid: '2005'
-radarr_container_uid: '2005'
-
-prowlarr_container_gid: '2006'
-prowlarr_container_uid: '2006'
-
-qbittorrent_container_gid: '2008'
-qbittorrent_container_uid: '2008'
-
-nextcloud_container_uid: '2010'
-nextcloud_container_gid: '2010'
+nix_shared_config_dir: "../inventory/group_vars/lxc_containers/configuration.nix.j2"

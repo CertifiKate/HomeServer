@@ -1,0 +1,17 @@
+{ pkgs, ... }:
+
+{
+  environment.systemPackages = with pkgs; [
+  ];
+
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
+
+  systemd.services.something = {
+    environment = {
+      VAR = "KEY";
+    };
+  };
+
+  services.something = {
+  };
+}

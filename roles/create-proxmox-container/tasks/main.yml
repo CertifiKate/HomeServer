@@ -1,0 +1,56 @@
+- name: Add LXCs
+  throttle: 1
+  community.general.proxmox:
+    vmid: '{{ vmid }}'
+    node: '{{ node }}'
+    api_user: '{{ vault_pve_api_user }}'
+    api_password: '{{ vault_pve_api_password }}'
+    api_host: '{{ hostvars[node].ansible_host }}'
+    password: '{{ password | default(omit) }}'
+    hostname: 'l-{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
+    ostemplate: 'local:vztmpl/{{ lxc_templates[os_type] }}'
+    storage: 'local-lvm2'
+    cores: '{{ cores | default(1) }}'
+    memory: '{{ memory | default(512) }}'
+    swap: '{{ swap | default(512) }}'
+    onboot: '{{ onboot | default(true) }}'
+    pubkey: '{{ pve_ansible_pubkey }}'
+    unprivileged: '{{ pve_unprivileged | default(true) }}'
+    pool: "apps"
+    netif:
+      '{{ network_interfaces }}'
+    features:
+    - nesting=1
+    # - cmode=console
+
+# - name: Setup nixos
+#   when: os_type == 'nix'
+#   block:
+    # - name: Set console mode
+    #   delegate_to: '{{ node }}'
+    #   become: true
+    #   command:
+    #     cmd: "pct set {{ vmid }} --cmode console" 
+    #   register: cmode
+    #   changed_when: cmode.rc not in [0]
+    #   failed_when: cmode.rc not in [0,1]
+    #   ignore_errors: true
+
+
+- name: Start containers
+  block:
+    - name: Start LXC
+      community.general.proxmox:
+        vmid: '{{ vmid }}'
+        api_user: '{{ vault_pve_api_user }}'
+        api_password: '{{ vault_pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: started
+      register: startLxcTask
+
+    - name: Pause for 10s to let LXC start
+      wait_for:
+        host: '{{ ansible_host }}'
+        port: 22
+        timeout: 10
+      when: startLxcTask.changed
