@@ -36,6 +36,33 @@
     #   failed_when: cmode.rc not in [0,1]
     #   ignore_errors: true
 
+- name: Proxmox Host configuration for LXC
+  delegate_to: "{{ node }}"
+  connection: ssh
+  become: true
+  block:
+    - name: Ensure bind mount directories exist
+      file:
+        path: "{{ item.value.host_path }}"
+        state: directory
+        owner: '100000'
+        group: '100000'
+      loop: "{{ lxc_mounts | dict2items }}"
+      loop_control:
+        label: "{{ item.value.host_path | default(omit) }}"
+      ignore_errors: true
+
+    - name: Add mount points
+      command:
+        #     pct set 150        --mp1            /mnt/disk1/Media          ,mp=/data/
+        cmd: "pct set {{ vmid }} --{{ item.key }} {{ item.value.host_path }},mp={{ item.value.container_path }}"
+      register: mpResponse
+      changed_when: mpResponse.rc not in [0]
+      failed_when: mpResponse.rc not in [0,1]
+      loop: "{{ lxc_mounts | dict2items }}"
+      loop_control:
+        label: "{{ item.value.host_path }} -> {{ item.value.container_path }}"
+      ignore_errors: true
 
 - name: Start containers
   block:

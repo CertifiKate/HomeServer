@@ -14,6 +14,7 @@ vault_pve_api_user: USER
 vault_pve_api_password: PASSWORD
 
 vault_authelia_jwt_secret: SECRET
+vault_authelia_session_secret: SECRET
 
 vault_tandoor_secret: PASSWORD
 vault_tandoor_db_password: PASS

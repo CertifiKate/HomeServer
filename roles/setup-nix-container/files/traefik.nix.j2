@@ -14,12 +14,21 @@
     };
   };
 
+  # Allow traefik to access config data dir
+  systemd = {
+    tmpfiles.rules = [
+      # Allow anyone to access the base directory
+      "d {{ project_directory }} 777 root root"
+      "d {{ config_dir }} 1750 traefik traefik"
+      "d {{ data_dir }} 1750 traefik traefik"
+    ];
+  };
 
   # TODO: Look into the Nix way of generating this config rather than ansible templating
 
   services.traefik = {
     enable = true;
-    dataDir = "{{ data_dir }}/data";
+    dataDir = "{{ data_dir }}";
     staticConfigOptions = {
       entryPoints = {
         web = {
@@ -41,7 +50,7 @@
 
       certificatesResolvers.letsEncrypt.acme = {
         email = "{{ vault_cloudflare_email }}";
-        storage = "{{ data_dir }}/acme.json";
+        storage = "{{ config_dir }}/acme.json";
         dnsChallenge = {
           provider = "cloudflare";
           delayBeforeCheck = "0";

@@ -1,12 +1,9 @@
 - name: Run initial nix configuration from bare install - no python
   block:
-  - name: Determine if SSH open
-    connection: local
-    become: false
-    wait_for:
-      port: 22
-      host: '{{ ansible_ssh_host }}'
-      timeout: 5
+  - name: Check if we can connect
+    ping:
+    vars:
+      ansible_python_interpreter: "/run/current-system/sw/bin/python3"
     register: sshReachable
     ignore_errors: true
 
@@ -29,51 +26,47 @@
 
     - name: Copy Nix config to node
       template:
-        src: "{{ nix_shared_config }}"
+        src: "{{ nix_shared_config_dir }}"
         dest: "/tmp/{{ vmid }}-configuration.nix"
       register: nixConfigChanged
       vars: 
         skipServiceInit: true
 
-    - when: nixConfigChanged.changed
-      block:
+    - name: Push config to Nix
+      command:
+        cmd: "pct push {{ vmid }} /tmp/{{ vmid }}-configuration.nix /etc/nixos/configuration.nix"
 
-      - name: Push config to Nix
-        command:
-          cmd: "pct push {{ vmid }} /tmp/{{ vmid }}-configuration.nix /etc/nixos/configuration.nix"
+    - name: Update nix-channel
+      shell:
+        cmd: pct enter {{ vmid  }}
+        stdin:
+          source /etc/set-environment;
+          nix-channel --update;
+          exit;
 
-      - name: Update nix-channel
-        shell:
-          cmd: pct enter {{ vmid  }}
-          stdin:
-            source /etc/set-environment;
-            nix-channel --update;
-            exit;
+    - name: Restart Nix container
+      delegate_to: localhost
+      become: false
+      community.general.proxmox:
+        vmid: "{{ vmid }}"
+        api_user: '{{ vault_pve_api_user }}'
+        api_password: '{{ vault_pve_api_password }}'
+        api_host: '{{ hostvars[node].ansible_host }}'
+        state: restarted
+                  
+    - name: Wait for Nix to come back up
+      pause:
+        seconds: 15
 
-      - name: Restart Nix container
-        delegate_to: localhost
-        become: false
-        community.general.proxmox:
-          vmid: "{{ vmid }}"
-          api_user: '{{ vault_pve_api_user }}'
-          api_password: '{{ vault_pve_api_password }}'
-          api_host: '{{ hostvars[node].ansible_host }}'
-          state: restarted
-                    
-      - name: Wait for Nix to come back up
-        run_once: true
-        pause:
-          seconds: 15
-
-      - name: Rebuild Nix
-        shell:
-          cmd: pct enter {{ vmid  }}
-          stdin:
-            source /etc/set-environment;
-            nixos-rebuild switch;
-            exit;
-            exit;
-        ignore_errors:
+    - name: Rebuild Nix
+      shell:
+        cmd: pct enter {{ vmid  }}
+        stdin:
+          source /etc/set-environment;
+          nixos-rebuild switch;
+          exit;
+          exit;
+      ignore_errors: true
 
 - name: Setup Nix
   become: true
@@ -93,7 +86,9 @@
       src: ./files/{{ item }}.nix.j2
       dest: /etc/nixos/{{ item }}.nix
     vars:
-      data_dir: "{{ project_directory }}/{{ item }}/data"
+      base_dir: "{{ project_directory }}/{{ item }}"
+      config_dir: "{{ base_dir }}/config"
+      data_dir: "{{ base_dir }}/data"
     with_items:
       - "{{ nix_configs }}"
     when: nix_configs is defined

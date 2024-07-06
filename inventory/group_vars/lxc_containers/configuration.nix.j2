@@ -8,7 +8,7 @@
   imports = [ 
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
 
-    {% if nix_configs is defined and (skipServiceInit is undefined or skipServiceInit)  %}
+    {% if nix_configs is defined and (skipServiceInit is undefined or not skipServiceInit)  %}
       {% for config in nix_configs %}
     ./{{ config }}.nix
       {% endfor %}

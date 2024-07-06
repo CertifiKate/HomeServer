@@ -1,6 +1,7 @@
 remote_user: "root"
 ansible_user: "{{ remote_user }}"
 project_root_directory: "/config"
+project_directory: "{{ project_root_directory }}"
 
 # Use docker for most hosts by default
 uses_docker: yes

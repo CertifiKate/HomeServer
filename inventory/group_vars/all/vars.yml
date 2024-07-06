@@ -2,9 +2,6 @@ timezone: "Australia/Adelaide"
 docker_recreate: false
 docker_pull: false
 
-project_directory: "{{ project_root_directory }}/apps"
-
-
 pve_ansible_pubkey: '{{ vault_pve_ansible_pubkey }}'
 
 figlet_font_dir: "../inventory/group_vars/all/bulbhead.flf"
