@@ -23,19 +23,15 @@
         Host {{ hostvars[host].inventory_hostname }}
           Hostname {{ hostvars[host].ansible_host }}
           User {{ hostvars[host].remote_user }}
-          IdentityFile ~/.ssh/ansible-key
           ForwardAgent yes
         {% endfor %}
 
-        {% for server in groups["physical_servers"] %}
-        #===== LXD - {{ server }} ===#
-        {% for host in hostvars[server].groups.pve_lxd_containers  %}
+        #===== LXCs ===#
+        {% for host in groups["lxc_containers"]  %}
         Host {{ hostvars[host].inventory_hostname + ("-dev" if server in groups["dev"] else "") }}
-          Hostname 10.0.0.{{ hostvars[host].vmid }}
+          Hostname 192.168.10.{{ hostvars[host].id }}
           User {{ hostvars[host].remote_user }}
-          ProxyCommand ssh -p 22 -W %h:%p -q ssh_jump_host@{{ hostvars[server].ansible_host }} -i ~/.ssh/ansible-key
           StrictHostKeyChecking=no
-          IdentityFile ~/.ssh/ansible-key
+          ForwardAgent yes
         {% endfor %}
         #==============#
-        {% endfor %}

@@ -4,8 +4,11 @@ docker_pull: false
 
 project_directory: "{{ project_root_directory }}/apps"
 
-ansible_python_interpreter: "/usr/bin/python3"
 
 pve_ansible_pubkey: '{{ vault_pve_ansible_pubkey }}'
 
-debian_template: "debian-12-standard_12.0-1_amd64.tar.zst"
+figlet_font_dir: "../inventory/group_vars/all/bulbhead.flf"
+
+lxc_templates:
+    nix: "nixos-23-11-x86_64-linux.tar.xz"
+    debian: "debian-12-standard_12.0-1_amd64.tar.zst"

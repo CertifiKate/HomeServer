@@ -1,58 +1,53 @@
-# Used to define the configs of the LXC containers
-# Dev and Prod should always have the same LXC configs, but the host and 
-# We create these on different bare metal servers
+# Used to define the configs of all PVE containers (LXC and VM)
+# Dev and Prod should always have the same LXC configs, but the host and certain config options may need to be different
 
 all:
   children:
     dev:
     prod:
-    # ==== LXC Containers =============
-    lxc_containers:
+
+    lxc:
       hosts:
-      # == Organised by function ======
-        # Each function has different IP blocks
 
-        # === Core (10-29) ============
-        # Internal-only DNS
-        # dns-01:
-        #   vmid: 111
-        #   node: '{{ host_server }}'
-        #   ostemplate: '{{ debian_template }}'
-        #   uses_docker: false
-        #   memory: 512
-        #   roles:
-        #     - setup-dnsmasq
-
-        dns-02:
-          vmid: 116
+      # ======== Core Services =========
+        dns-01:
+          id: 111
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          uses_docker: false
-          memory: 512
-          roles:
-            - setup-dnsmasq
+          os_type: 'nix'
+          memory: 1024
+          # TODO: Add nix configs
 
         prox-01:
-          vmid: 115
+          id: 112
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
+          os_type: 'nix'
           memory: 1024
-          custom_networks:
-            net1: "name=eth1,ip=10.0.101.3/24,bridge=vmbr101,gw=10.0.101.1"
-          roles:
-            - setup-proxy-traefik
+          nix_configs:
+            - traefik
 
         auth-01:
-          vmid: 112
+          id: 113
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 2048
-          roles:
-            - setup-auth
+          os_type: 'nix'
+          memory: 1024
+          nix_configs:
+            - authelia
 
+
+
+      # # == Organised by function ======
+      #   # Each function has different IP blocks
+
+        # prox-01:
+        #   id: 15
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   memory: 1024
+        #   roles:
+        #     - setup-proxy-traefik
 
         avahi-01:
-          vmid: 118
+          id: 18
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           uses_docker: false
@@ -60,13 +55,9 @@ all:
           roles:
             - setup-avahi
 
-        # sec-01:
-        #   vmid: 114
-        #   node: '{{ host_server }}'
-        #   ostemplate: '{{ debian_template }}'
 
         gate-01:
-          vmid: 113
+          id: 13
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 512
@@ -77,7 +68,7 @@ all:
         # =============================
         # === Utilty (30-49) ==========
         util-01:
-          vmid: 130
+          id: 30
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 2048
@@ -88,17 +79,15 @@ all:
           - setup-recipes
 
         code-01:
-          vmid: 135
+          id: 35
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 2048
-          custom_networks:
-            net1: "name=eth1,ip=10.0.101.3/24,bridge=vmbr101,gw=10.0.101.1"
           roles:
           - setup-coder
 
         stor-01:
-          vmid: 140
+          id: 40
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 2048
@@ -111,7 +100,7 @@ all:
           - setup-storage
 
         home-01:
-          vmid: 141
+          id: 41
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 1024
@@ -127,7 +116,7 @@ all:
         # =============================
         # === Media (50-59) ===========
         media-01:
-          vmid: 150
+          id: 50
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           media_directory: "/data"
@@ -141,7 +130,7 @@ all:
             - setup-jellyfin
 
         media-02:
-          vmid: 151
+          id: 51
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           media_directory: "/data"
@@ -161,41 +150,41 @@ all:
           # proxy_dev_mode: true
           traefikServices:
             # Core
-            - name: authentik
-              host: 'auth.{{ project_tld }}'
-              destScheme: https
-              destHost: auth-01
-              destPort: '9443'
-              proxyAuth: false
+            # - name: authentik
+            #   host: 'auth.{{ project_tld }}'
+            #   destScheme: https
+            #   destHost: auth-01
+            #   destPort: '9443'
+            #   proxyAuth: false
             
-            - name: wireguard
-              host: 'wgui.{{ project_tld }}'
-              destScheme: http
-              destHost: gate-01
-              destPort: '51821'
+            # - name: wireguard
+            #   host: 'wgui.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: gate-01
+            #   destPort: '51821'
 
-            # Util
-            - name: grafana
-              host: 'monitor.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '3000'
-              proxyAuth: false
+            # # Util
+            # - name: grafana
+            #   host: 'monitor.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: util-01
+            #   destPort: '3000'
+            #   proxyAuth: false
+            #   # autheliaAuth: one_factor
+
+            # - name: influxdb
+            #   host: 'influxdb.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: util-01
+            #   destPort: '8086'
               # autheliaAuth: one_factor
 
-            - name: influxdb
-              host: 'influxdb.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '8086'
-              # autheliaAuth: one_factor
-
-            - name: coder
-              host: 'code.{{ project_tld }}'
-              destScheme: http
-              destHost: code-01
-              destPort: '7080'
-              proxyAuth: false
+            # - name: coder
+            #   host: 'code.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: code-01
+            #   destPort: '7080'
+            #   proxyAuth: false
 
             - name: vikunja-api
               rule: 'Host(`vikunja.{{ project_tld }}`) && (PathPrefix(`/api/v1`) || PathPrefix(`/dav/`) || PathPrefix(`/.well-known/`))'
@@ -259,11 +248,11 @@ all:
               destHost: media-02
               destPort: '8080'
 
-            - name: prowlarr
-              host: 'prowlarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '9696'
+            # - name: prowlarr
+            #   host: 'prowlarr.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: media-02
+            #   destPort: '9696'
 
             - name: calibre-web
               host: 'library.{{ project_tld }}'
@@ -277,14 +266,14 @@ all:
               host: 'home.{{ project_tld }}'
               destScheme: http
               destHost: home-01
-              destPort: '8743'
+              destPort: '8123'
               proxyAuth: false
 
-            - name: esp-home
-              host: 'esp.{{ project_tld }}'
-              destScheme: http
-              destHost: home-01
-              destPort: '6052'
+            # - name: esp-home
+            #   host: 'esp.{{ project_tld }}'
+            #   destScheme: http
+            #   destHost: home-01
+            #   destPort: '6052'
 
     # =============================
     # === Meta-groups =============

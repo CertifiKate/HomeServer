@@ -1,6 +1,15 @@
 project_tld: URL
 
 vault_pve_ansible_pubkey: SSH PUB KEY
+vault_pubkeys:
+    - username: root
+      pubkeys:
+        - "PUB KEY 1"
+        - "PUB KEY 2"
+    - username: other_user
+      pubkeys:
+        - "PUB KEY N"
+
 vault_pve_api_user: USER
 vault_pve_api_password: PASSWORD
 

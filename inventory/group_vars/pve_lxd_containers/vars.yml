@@ -1,27 +1,4 @@
-remote_user: "root"
-ansible_user: "{{ remote_user }}"
-project_root_directory: "/config"
+ansible_user: "ansible"
+ansible_host: 192.168.10.{{ id }}
 
-# Use docker for most hosts by default
-uses_docker: yes
-pve_api_user: '{{ vault_pve_api_user }}'
-pve_api_password: '{{ vault_pve_api_password }}'
-pve_internal_ip: '10.0.0.{{ vmid }}'
-ansible_host: '{{ pve_internal_ip }}'
-ansible_ssh_common_args: '-o ProxyCommand="ssh -p 22 -W %h:%p -q ssh_jump_host@{{ hostvars[node].ansible_host }}" -o StrictHostKeyChecking=no'
-
-# Container UID/GID
-sonarr_container_gid: '2004'
-sonarr_container_uid: '2004'
-
-radarr_container_gid: '2005'
-radarr_container_uid: '2005'
-
-prowlarr_container_gid: '2006'
-prowlarr_container_uid: '2006'
-
-qbittorrent_container_gid: '2008'
-qbittorrent_container_uid: '2008'
-
-nextcloud_container_uid: '2010'
-nextcloud_container_gid: '2010'
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
