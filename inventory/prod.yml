@@ -5,8 +5,8 @@ all:
         microwave:
           ansible_host: 192.168.0.5
           gateway: 192.168.0.1
-          mgmt_interface: enp0s31f6
-          ethernet_interface: enp1s0
+          mgmt_interface: enp1s0 
+          ethernet_interface: enp0s31f6
           project_root_directory: "/services"
           project_directory: "{{ project_root_directory }}/lxc"
           # Use direct disk rather than MergerFS endpoint just incase that has failed
@@ -53,6 +53,10 @@ prod:
         dns-01:
         prox-01:
         auth-01:
+
+    vm_containers:
+      hosts:
+        mine-01:
 
     # pve_containers:
     #   hosts:

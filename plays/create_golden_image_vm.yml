@@ -1,0 +1,52 @@
+- name: Create Nix Golden VM image
+  hosts: prox-01
+  become: true
+  gather_facts: false
+  vars:
+    build_server: prox-01
+    default_config: ../inventory/group_vars/vm_containers/configuration-minimal.nix.j2
+    skipServiceInit: true
+    output_name: "vzdump-qemu-nixos-24.05-golden.vma.zst"
+    output_path: "/var/lib/vz/dump/{{ output_name }}"
+    output_host: "microwave"
+  tasks:
+
+  - name: Create image
+    block:
+      - name: Copy default config
+        template:
+          src: "{{ default_config }}"
+          dest: /tmp/configuration.nix
+        register: copyConfig
+
+      - name: Run Generator
+        command:
+          cmd: |
+            nix run github:nix-community/nixos-generators 
+            --extra-experimental-features nix-command 
+            --extra-experimental-features flakes -- 
+            --format proxmox 
+            --disk-size 4096
+            --configuration /tmp/configuration.nix
+        register: runGenerator
+
+      - name: Print filename
+        debug:
+          msg: "File Name: {{ runGenerator.stdout }}"
+
+  - name: Get generated image onto proxmox
+    block:
+    - name: Pull image from build server onto local device
+      become: false
+      fetch:
+        src: "{{ runGenerator.stdout }}"
+        dest: "/tmp/{{ output_name }}"
+        flat: true
+
+
+    - name: Copy image to proxmox node
+      delegate_to: "{{ output_host }}"
+      copy:
+        src: "/tmp/{{ output_name }}"
+        dest: "{{ output_path }}"
+

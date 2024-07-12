@@ -1,0 +1,11 @@
+server_network: 
+  net0: "name=eth0,ip=192.168.10.{{ id }}/24,bridge=vmbr2,gw=192.168.10.1,tag={{ vlan['server'] }}"
+
+dmz_network:
+  net0: "virtio,bridge=vmbr0,tag={{ vlan['dmz'] }}"
+
+
+# # Set the network interfaces to server_network + any custom OR only dmz network (we don't want overlap if it's in the DMZ)
+network_interfaces: |
+
+  {{ ( custom_networks | default({}) | combine(server_network) ) if in_dmz is undefined or in_dmz is false else dmz_network }}

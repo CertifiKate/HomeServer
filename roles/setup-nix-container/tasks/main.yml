@@ -6,6 +6,7 @@
       ansible_python_interpreter: "/run/current-system/sw/bin/python3"
     register: sshReachable
     ignore_errors: true
+    ignore_unreachable: true
 
   - name: Determine if Python installed
     raw: python -V
@@ -13,10 +14,10 @@
     failed_when: false
     ignore_errors: true
     changed_when: false
-    when: sshReachable.failed is false
+    when: sshReachable.failed is false or sshReachable.unreachable
 
   - set_fact:
-      needsPython: "{{ sshReachable.failed or pythonInstalled.rc not in [0] }}"
+      needsPython: "{{ sshReachable.failed or sshReachable.unreachable or pythonInstalled.rc not in [0] }}"
 
   - name: Setup basic Nix config without python
     delegate_to: "{{ node }}"
@@ -67,6 +68,16 @@
           exit;
           exit;
       ignore_errors: true
+
+# - name: Setup Nix
+#   become: true
+#   vars:
+#     ansible_python_interpreter: "/run/current-system/sw/bin/python3"
+#   block:
+#     # TODO: Put this in separate Git repo
+#     # - name: Move over flake
+#     #   template:
+#     #     src
 
 - name: Setup Nix
   become: true

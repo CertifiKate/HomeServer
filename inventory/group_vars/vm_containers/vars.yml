@@ -7,14 +7,17 @@ project_directory: "{{ project_root_directory }}"
 uses_docker: yes
 pve_api_user: '{{ vault_pve_api_user }}'
 pve_api_password: '{{ vault_pve_api_password }}'
-vmid: "{{ '1%04d'|format(id) }}"
-pve_internal_ip: '192.168.10.{{ id }}'
+vmid: "{{ '2%04d'|format(id) }}"
+
+ip_base: "192.168.{{ vlan['dmz'] if in_dmz is defined and in_dmz else vlan['server'] }}"
+
+pve_internal_ip: '{{ ip_base }}.{{ id }}'
+
 ansible_host: '{{ pve_internal_ip }}'
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
-lxc_templates:
-    nix: "nixos-23-11-x86_64-linux.tar.xz"
-    debian: "debian-12-standard_12.0-1_amd64.tar.zst"
+vm_templates:
+    nix: "vzdump-qemu-nixos-24.05-golden.vma.zst"
 
 
-nix_shared_config_dir: "../inventory/group_vars/lxc_containers/configuration.nix.j2"
+nix_shared_config_dir: "../inventory/group_vars/vm_containers/configuration.nix.j2"

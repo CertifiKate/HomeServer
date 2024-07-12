@@ -8,6 +8,11 @@ lxc_mounts: |
   {{ custom_mounts | default({}) | combine(lxc_config_device_def) }}
 
 server_network: 
-      net0: "name=eth0,ip=192.168.10.{{ id }}/24,bridge=vmbr2,gw=192.168.10.1,tag=10"
+  net0: "name=eth0,ip=192.168.10.{{ id }}/24,bridge=vmbr2,gw=192.168.10.1,tag={{ vlan['server'] }}"
+
+dmz_network:
+  net0: "name=eth0, ip=192.168.{{ vlan['dmz'] }}.{{ id }}/24,bridge=vmbr0,gw=192.168.{{vlan['dmz']}}.1,tag={{ vlan['dmz'] }}"
+
+# Set the network interfaces to server_network + any custom OR only dmz network (we don't want overlap if it's in the DMZ)
 network_interfaces: |
-  {{ custom_networks | default({}) | combine(server_network) }}
+  {{ ( custom_networks | default({}) | combine(server_network) ) if in_dmz is undefined or in_dmz is false else dmz_network }}

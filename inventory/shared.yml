@@ -6,7 +6,7 @@ all:
     dev:
     prod:
 
-    lxc:
+    shared_containers:
       hosts:
 
       # ======== Core Services =========
@@ -33,7 +33,23 @@ all:
           nix_configs:
             - authelia
 
+        build-01:
+          id: 114
+          node: '{{ host_server }}'
+          os_type: 'nix'
+          memory: 8192
+          nix_configs:
+            - buildserver
 
+        mine-01:
+          id: 131
+          node: '{{ host_server }}'
+          os_type: 'nix'
+          memory: 8192
+          cores: 4
+          in_dmz: true
+          nix_configs:
+            - minecraft
 
       # # == Organised by function ======
       #   # Each function has different IP blocks
@@ -150,12 +166,12 @@ all:
           # proxy_dev_mode: true
           traefikServices:
             # Core
-            # - name: authentik
-            #   host: 'auth.{{ project_tld }}'
-            #   destScheme: https
-            #   destHost: auth-01
-            #   destPort: '9443'
-            #   proxyAuth: false
+            - name: authelia
+              host: 'auth.{{ project_tld }}'
+              destScheme: https
+              destHost: auth-01
+              destPort: '9091'
+              proxyAuth: false
             
             # - name: wireguard
             #   host: 'wgui.{{ project_tld }}'

@@ -7,7 +7,7 @@
     api_password: '{{ vault_pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
     password: '{{ password | default(omit) }}'
-    hostname: 'l-{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
+    hostname: '{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
     ostemplate: 'local:vztmpl/{{ lxc_templates[os_type] }}'
     storage: 'local-lvm2'
     cores: '{{ cores | default(1) }}'
@@ -21,6 +21,7 @@
       '{{ network_interfaces }}'
     features:
     - nesting=1
+  
     # - cmode=console
 
 # - name: Setup nixos
