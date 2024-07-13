@@ -38,6 +38,7 @@ all:
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 8192
+          cores: 4
           nix_configs:
             - buildserver
 

@@ -4,13 +4,15 @@
 
 { config, lib, pkgs, modulesPath, ... }:
 
-{
-  imports = [ 
-    (modulesPath + "/virtualisation/proxmox-lxc.nix")
-  ];
-  
-  networking.hostName = "{{ inventory_hostname }}";
-  time.timeZone = "{{ timezone }}";
+let 
+  project_tld = "";
+
+in {
+  # imports = [ 
+  #   (modulesPath + "/virtualisation/proxmox-lxc.nix")
+  # ];
+
+  time.timeZone = "Australia/Adelaide";
 
   environment.systemPackages = with pkgs; [
     python3
@@ -57,19 +59,11 @@
     };
 
     promptInit = ''
-      echo "$fg[red]$(figlet {{ inventory_hostname }} -f /etc/nixos/figlet-font.flf)"
+      echo "$fg[red]$(figlet ${config.networking.hostname} -f /etc/nixos/figlet-font.flf)"
       # TODO: Work out why this isn't being properly set in ZSH
-      export HOST={{ inventory_hostname }}
+      export HOST=${config.networking.hostname}
     '';
   };
-
-{% for userKeys in vault_pubkeys %}
-  users.users.{{ userKeys.username }}.openssh.authorizedKeys.keys = [
-  {% for key in userKeys.pubkeys %}
-    "{{ key }}"
-  {% endfor %}
-  ];
-{% endfor %}  
 
   services.openssh.enable = true;
 

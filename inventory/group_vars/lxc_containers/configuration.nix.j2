@@ -17,6 +17,8 @@
   
   networking.hostName = "{{ inventory_hostname }}";
   time.timeZone = "{{ timezone }}";
+  
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   environment.systemPackages = with pkgs; [
     python3
