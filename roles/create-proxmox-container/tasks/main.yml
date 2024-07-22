@@ -24,42 +24,9 @@
   register: added_lxc
   
 
-- name: Setup nixos
-  when: os_type == 'nix'
+- name: Setup nixos from clean install
+  when: os_type == 'nix' and added_lxc.changed
   block:
-  # - name: Run initial nix configuration from bare install - no python
-  #   block:
-
-  #   # - name: Determine if Python installed
-  #   #   raw: python -V
-  #   #   register: pythonInstalled
-  #   #   failed_when: false
-  #   #   ignore_errors: true
-  #   #   changed_when: false
-  #   #   when: sshReachable.failed is false or sshReachable.unreachable is defined and sshReachable.unreachable
-
-  #   - set_fact:
-  #       needsPython: "{{ sshReachable.failed }}"
-      # or sshReachable.unreachable or pythonInstalled.rc not in [0] }}"
-
-    # - name: Setup basic Nix config without python
-    #   delegate_to: "{{ node }}"
-    #   become: true
-    #   when: needsPython
-    #   block:
-
-#       - name: Copy Nix config to node
-#         template:
-#           src: "{{ nix_shared_config_dir }}"
-#           dest: "/tmp/{{ vmid }}-configuration.nix"
-#         register: nixConfigChanged
-#         vars: 
-#           skipServiceInit: true
-
-#       - name: Push config to Nix
-#         command:
-#           cmd: "pct push {{ vmid }} /tmp/{{ vmid }}-configuration.nix /etc/nixos/configuration.nix"
-
   - name: Update nix-channel
     become: true
     connection: ssh
@@ -67,11 +34,6 @@
       ansible_python_interpreter: "/run/current-system/sw/bin/python3"
     command:
       cmd: nix-channel --update
-      # cmd: pct enter {{ vmid  }}
-      # stdin:
-      #   source /etc/set-environment;
-      #   nix-channel --update;
-      #   exit;
 
   - name: Restart Nix container
     delegate_to: localhost
