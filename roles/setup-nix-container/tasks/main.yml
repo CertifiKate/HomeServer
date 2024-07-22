@@ -1,86 +1,48 @@
-- name: Run initial nix configuration from bare install - no python
-  block:
-  - name: Check if we can connect
-    ping:
-    vars:
-      ansible_python_interpreter: "/run/current-system/sw/bin/python3"
-    register: sshReachable
-    ignore_errors: true
-    ignore_unreachable: true
-
-  - name: Determine if Python installed
-    raw: python -V
-    register: pythonInstalled
-    failed_when: false
-    ignore_errors: true
-    changed_when: false
-    when: sshReachable.failed is false
-    #  or sshReachable.unreachable is defined and sshReachable.unreachable
-
-  - set_fact:
-      needsPython: "{{ sshReachable.failed }}"
-    # or sshReachable.unreachable or pythonInstalled.rc not in [0] }}"
-
-  - name: Setup basic Nix config without python
-    delegate_to: "{{ node }}"
-    become: true
-    when: needsPython
-    block:
-
-    - name: Copy Nix config to node
-      template:
-        src: "{{ nix_shared_config_dir }}"
-        dest: "/tmp/{{ vmid }}-configuration.nix"
-      register: nixConfigChanged
-      vars: 
-        skipServiceInit: true
-
-    - name: Push config to Nix
-      command:
-        cmd: "pct push {{ vmid }} /tmp/{{ vmid }}-configuration.nix /etc/nixos/configuration.nix"
-
-    - name: Update nix-channel
-      shell:
-        cmd: pct enter {{ vmid  }}
-        stdin:
-          source /etc/set-environment;
-          nix-channel --update;
-          exit;
-
-    - name: Restart Nix container
-      delegate_to: localhost
-      become: false
-      community.general.proxmox:
-        vmid: "{{ vmid }}"
-        api_user: '{{ vault_pve_api_user }}'
-        api_password: '{{ vault_pve_api_password }}'
-        api_host: '{{ hostvars[node].ansible_host }}'
-        state: restarted
-                  
-    - name: Wait for Nix to come back up
-      pause:
-        seconds: 15
-
-    - name: Rebuild Nix
-      shell:
-        cmd: pct enter {{ vmid  }}
-        stdin:
-          source /etc/set-environment;
-          nixos-rebuild switch;
-          exit;
-          exit;
-      ignore_errors: true
-
 - name: Setup Nix
   become: true
   vars:
     ansible_python_interpreter: "/run/current-system/sw/bin/python3"
   block:
-    - name: Move over config files
+    - name: Add SOPS Age key (For runtime secrets)
       copy:
-        src: ./files/config/
-        dest: /etc/nixos
+        content: "{{ vault_nix_age[inventory_hostname] }}"
+        dest: "/etc/sops-age.txt"
+        mode: 0500
+        owner: root
+        group: root
 
+    - name: Add deploy key (for unattended SSH pulling private secrets repo)
+      copy:
+        content: "{{ vault_nix_deploy_key }}"
+        dest: "/root/.ssh/id_ed25519"
+        mode: 0500
+        owner: root
+        group: root
+
+    - name: Get latest version of the flake
+      become: true
+      git:
+        force: true
+        dest: /etc/nixos/
+        repo: "{{ repo }}"
+      vars:
+        repo: https://github.com/CertifiKate/nix-dotfiles.git
+
+    # - name: Get latest version of the flake
+    #   become: true
+    #   command:
+    #     chdir: /etc/nixos/
+    #     cmd: "nix-shell -p git --command 'git clone {{ repo }} /etc/nixos'"
+    #   vars:
+    #     repo: https://github.com/CertifiKate/nix-dotfiles.git
+    #   when: files.matched == 0
+
+
+    - name: Run nixos-rebuild
+      become: true
+      command:
+        chdir: /etc/nixos
+        cmd: nixos-rebuild switch --flake .#{{ inventory_hostname }}
 
 # - name: Setup Nix
 #   become: true

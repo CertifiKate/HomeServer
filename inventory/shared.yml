@@ -15,23 +15,18 @@ all:
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 1024
-          # TODO: Add nix configs
 
         prox-01:
           id: 112
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 1024
-          nix_configs:
-            - traefik
 
         auth-01:
-          id: 113
+          id: 115
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 1024
-          nix_configs:
-            - authelia
 
         build-01:
           id: 114
@@ -39,8 +34,6 @@ all:
           os_type: 'nix'
           memory: 8192
           cores: 4
-          nix_configs:
-            - buildserver
 
         mine-01:
           id: 131
@@ -49,8 +42,6 @@ all:
           memory: 8192
           cores: 4
           in_dmz: true
-          nix_configs:
-            - minecraft
 
       # # == Organised by function ======
       #   # Each function has different IP blocks
@@ -126,7 +117,7 @@ all:
               container_path: "{{ hostvars[ host_server].zigbee_adapter | default() }}"
               host_path: "{{ hostvars[ host_server].zigbee_adapter | default() }}"
           custom_networks:
-            net1: "name=eth1,ip=192.168.200.2/24,bridge=vmbr2,gw=192.168.200.1"
+            net1: "name=eth1,ip=192.168.200.2/24,bridge=vmbr0,gw=192.168.200.1"
           roles:
           - setup-home
 

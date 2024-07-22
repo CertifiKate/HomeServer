@@ -8,12 +8,11 @@ uses_docker: yes
 pve_api_user: '{{ vault_pve_api_user }}'
 pve_api_password: '{{ vault_pve_api_password }}'
 vmid: "{{ '1%04d'|format(id) }}"
-pve_internal_ip: '192.168.10.{{ id }}'
-ansible_host: '{{ pve_internal_ip }}'
+ansible_host: '{{ inventory_hostname }}.srv'
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
 lxc_templates:
-    nix: "nixos-23-11-x86_64-linux.tar.xz"
+    nix: "nixos-24.05-golden.tar.xz"
     debian: "debian-12-standard_12.0-1_amd64.tar.zst"
 
 
