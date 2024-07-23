@@ -53,7 +53,6 @@ prod:
         dns-01:
         prox-01:
         auth-01:
-        build-01:
 
     vm_containers:
       hosts:

@@ -12,7 +12,7 @@
     storage: 'local-lvm2'
     cores: '{{ cores | default(1) }}'
     memory: '{{ memory | default(512) }}'
-    swap: '{{ swap | default(512) }}'
+    swap: '{{ swap | default(1024) }}'
     onboot: '{{ onboot | default(true) }}'
     pubkey: '{{ pve_ansible_pubkey }}'
     unprivileged: '{{ pve_unprivileged | default(true) }}'
@@ -22,38 +22,12 @@
     features:
     - nesting=1
   register: added_lxc
-  
-
-- name: Setup nixos from clean install
-  when: os_type == 'nix' and added_lxc.changed
-  block:
-  - name: Update nix-channel
-    become: true
-    connection: ssh
-    vars:
-      ansible_python_interpreter: "/run/current-system/sw/bin/python3"
-    command:
-      cmd: nix-channel --update
-
-  - name: Restart Nix container
-    delegate_to: localhost
-    connection: local
-    become: false
-    community.general.proxmox:
-      vmid: "{{ vmid }}"
-      api_user: '{{ vault_pve_api_user }}'
-      api_password: '{{ vault_pve_api_password }}'
-      api_host: '{{ hostvars[node].ansible_host }}'
-      state: restarted
-
-  - name: Wait for Nix to come back up
-    pause:
-      seconds: 15
 
 - name: Proxmox Host configuration for LXC
   delegate_to: "{{ node }}"
   connection: ssh
   become: true
+  when: added_lxc.changed
   block:
     - name: Ensure bind mount directories exist
       file:
@@ -77,6 +51,41 @@
       loop_control:
         label: "{{ item.value.host_path }} -> {{ item.value.container_path }}"
       ignore_errors: true
+  
+- name: Pause for 10s to let LXC start
+  wait_for:
+    host: '{{ ansible_host }}'
+    port: 22
+    timeout: 10
+  when: added_lxc.changed
+
+- name: Setup nixos from clean install
+  when: os_type == 'nix' and added_lxc.changed
+  block:
+  - name: Update nix-channel
+    become: true
+    connection: ssh
+    vars:
+      ansible_python_interpreter: "/run/current-system/sw/bin/python3"
+    command:
+      cmd: nix-channel --update
+
+  - name: Restart Nix container
+    delegate_to: localhost
+    connection: local
+    become: false
+    community.general.proxmox:
+      vmid: "{{ vmid }}"
+      api_user: '{{ vault_pve_api_user }}'
+      api_password: '{{ vault_pve_api_password }}'
+      api_host: '{{ hostvars[node].ansible_host }}'
+      state: restarted
+
+  - name: Pause for 10s to let LXC start
+    wait_for:
+      host: '{{ ansible_host }}'
+      port: 22
+      timeout: 10
 
 - name: Start containers
   block:
