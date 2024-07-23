@@ -17,7 +17,7 @@ all:
           storage_directory: "/mnt/storage/Storage"
           scripts_directory: "/scripts"
           host_uses_snapraid: true
-          zigbee_adapter: /dev/ttyACM0
+
     physical_servers:
       hosts:
         microwave:
@@ -25,47 +25,19 @@ prod:
   hosts:
     microwave:
   children:
-    # ==== Physical/Cloud Servers ===========
-    cloud_servers:
-      hosts:
-        cloud-01:
-          ansible_host: "{{ cloud01_ip }}"
-          ansible_user: "ansible"
-          project_root_directory: "/services"
-          project_directory: "{{ project_root_directory }}/apps"
-          wireguard_no_frontend: true
-          wireguard_port: "{{ cloud01_wireguard_port }}"
-
-
-    # LEGACY - Will be moved to lxc_containers
-    pve_lxd_containers:
-      hosts:
-        dns-02:
-        avahi-01:
-        gate-01:
-        util-01:
-        home-01:
-        media-01:
-        media-02:
 
     lxc_containers:
       hosts:
-        dns-01:
         prox-01:
         auth-01:
+        avahi-01:
+        gate-01:
+        util-01:
+        # code-01:
+        # stor-01:
+        media-01:
+        media-02:
 
     vm_containers:
       hosts:
         mine-01:
-
-    # pve_containers:
-    #   hosts:
-    #     dns-01:
-    #     prox-01:
-    #     avahi-01:
-    #     auth-01:
-    #     gate-01:
-    #     util-01:
-    #     home-01:
-    #     media-01:
-    #     media-02:

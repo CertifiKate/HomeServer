@@ -12,12 +12,6 @@ all:
       # == Organised by function ======
 
       # ======== Core Services =========
-        # dns-01:
-        #   id: 111
-        #   node: '{{ host_server }}'
-        #   os_type: 'nix'
-        #   memory: 1024
-
         prox-01:
           id: 111
           node: '{{ host_server }}'
@@ -29,9 +23,9 @@ all:
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 512
-          roles:
-            - setup-cloudflared
-            - setup-cloudflare-ddns
+          # roles:
+          #   - setup-cloudflared
+          #   - setup-cloudflare-ddns
 
         build-01:
           id: 114
@@ -49,23 +43,24 @@ all:
         avahi-01:
           id: 18
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          uses_docker: false
+          os_type: 'nix'
           memory: 512
-          roles:
-            - setup-avahi
+          # ostemplate: '{{ debian_template }}'
+          # uses_docker: false
+          # roles:
+          #   - setup-avahi
 
         # =============================
         # === Utilty (30-49) ==========
         util-01:
           id: 30
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
+          os_type: 'nix'
           memory: 2048
-          roles:
-          - setup-monitoring
-          - setup-vikunja
-          - setup-recipes
+          # roles:
+          # - setup-monitoring
+          # - setup-vikunja
+          # - setup-recipes
 
         # code-01:
         #   id: 35
@@ -75,49 +70,46 @@ all:
         #   roles:
         #   - setup-coder
 
-        stor-01:
-          id: 40
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 2048
-          storage_directory: "/data"
-          custom_mounts:
-            mp1: 
-              container_path: "/data"
-              host_path: "{{ hostvars[ host_server ].storage_directory }}"
-          roles:
-          - setup-storage
+        # stor-01:
+        #   id: 40
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   memory: 2048
+        #   storage_directory: "/data"
+        #   custom_mounts:
+        #     mp1: 
+        #       container_path: "/data"
+        #       host_path: "{{ hostvars[ host_server ].storage_directory }}"
+        #   roles:
+        #   - setup-storage
 
         # =============================
         # === Media (50-59) ===========
         media-01:
           id: 50
           node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          media_directory: "/data"
+          os_type: 'nix'
           memory: 4096
-          uses_docker: false
           custom_mounts:
             mp1: 
               container_path: "/data"
               host_path: "{{ hostvars[ host_server ].media_directory }}"
-          roles:
-            - setup-jellyfin
+          # roles:
+          #   - setup-jellyfin
 
         media-02:
           id: 51
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
-          media_directory: "/data"
           memory: 4096
           custom_mounts:
             mp1: 
               container_path: "/data"
               host_path: "{{ hostvars[ host_server ].media_directory }}"
-          roles:
-            - setup-media-dl
-            - setup-torrent
-            - setup-library
+          # roles:
+          #   - setup-media-dl
+          #   - setup-torrent
+          #   - setup-library
 
         # =============================
         # === Media (50-59) ===========
@@ -128,154 +120,3 @@ all:
           memory: 8192
           cores: 4
           in_dmz: true
-
-    proxy:
-      hosts:
-        prox-01:
-          # proxy_dev_mode: true
-          traefikServices:
-            # Core
-            - name: authelia
-              host: 'auth.{{ project_tld }}'
-              destScheme: https
-              destHost: auth-01
-              destPort: '9091'
-              proxyAuth: false
-            
-            # - name: wireguard
-            #   host: 'wgui.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: gate-01
-            #   destPort: '51821'
-
-            # # Util
-            # - name: grafana
-            #   host: 'monitor.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: util-01
-            #   destPort: '3000'
-            #   proxyAuth: false
-            #   # autheliaAuth: one_factor
-
-            # - name: influxdb
-            #   host: 'influxdb.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: util-01
-            #   destPort: '8086'
-              # autheliaAuth: one_factor
-
-            # - name: coder
-            #   host: 'code.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: code-01
-            #   destPort: '7080'
-            #   proxyAuth: false
-
-            - name: vikunja-api
-              rule: 'Host(`vikunja.{{ project_tld }}`) && (PathPrefix(`/api/v1`) || PathPrefix(`/dav/`) || PathPrefix(`/.well-known/`))'
-              destScheme: http
-              destHost: util-01
-              destPort: '3456'
-              proxyAuth: false
-
-            - name: vikunja-frontend
-              host: 'vikunja.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '3457'
-              proxyAuth: false
-
-            - name: gotify
-              host: 'gotify.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '3300'
-              proxyAuth: false
-
-            - name: tandoor
-              host: 'recipes.{{ project_tld }}'
-              destScheme: http
-              destHost: util-01
-              destPort: '4001'
-              proxyAuth: false
-
-            # Media
-            - name: jellyfin
-              host: 'media.{{ project_tld }}'
-              destScheme: http
-              destHost: media-01
-              destPort: '8096'
-              proxyAuth: false
-
-            # TODO: Add more to authentik
-            - name: jellyseer
-              host: 'jellyseer.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '5055'
-              proxyAuth: false
-
-            - name: sonarr
-              host: 'sonarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '8989'
-
-            - name: radarr
-              host: 'radarr.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '7878'
-
-            - name: qbittorrent
-              host: 'torrent.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '8080'
-
-            # - name: prowlarr
-            #   host: 'prowlarr.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: media-02
-            #   destPort: '9696'
-
-            - name: calibre-web
-              host: 'library.{{ project_tld }}'
-              destScheme: http
-              destHost: media-02
-              destPort: '8083'
-              proxyAuth: false
-
-            # Home Assistant
-            - name: home-assistant
-              host: 'home.{{ project_tld }}'
-              destScheme: http
-              destHost: home-01
-              destPort: '8123'
-              proxyAuth: false
-
-            # - name: esp-home
-            #   host: 'esp.{{ project_tld }}'
-            #   destScheme: http
-            #   destHost: home-01
-            #   destPort: '6052'
-
-    # =============================
-    # === Meta-groups =============
-    media:
-      hosts:
-        media-01:
-        media-02:
-    utility:
-      hosts:
-        # util-01:
-        home-01:
-        code-01:
-        stor-01:
-    core:
-      hosts:
-        dns-02:
-        prox-01:
-        auth-01:
-        # sec-01:
-        gate-01:

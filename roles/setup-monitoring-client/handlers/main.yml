@@ -1,7 +1,0 @@
----
-- name: Restart Promtail
-  community.docker.docker_container:
-    name: promtail
-    container_default_behavior: compatibility
-    restart: yes
-  listen: restart promtail

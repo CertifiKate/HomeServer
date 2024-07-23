@@ -13,7 +13,6 @@
   - file:
       path: "~/.ssh/includes"
       state: directory
-  # TODO: Add private key config
 
   - name: Create SSH config file
     copy:

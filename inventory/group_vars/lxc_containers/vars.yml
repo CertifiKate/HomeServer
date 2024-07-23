@@ -13,7 +13,3 @@ ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
 lxc_templates:
     nix: "nixos-24.05-golden.tar.xz"
-    debian: "debian-12-standard_12.0-1_amd64.tar.zst"
-
-
-nix_shared_config_dir: "../inventory/group_vars/lxc_containers/configuration.nix.j2"
