@@ -1,114 +1,41 @@
-- name: Run initial nix configuration from bare install - no python
-  block:
-  - name: Determine if SSH open
-    connection: local
-    become: false
-    wait_for:
-      port: 22
-      host: '{{ ansible_ssh_host }}'
-      timeout: 5
-    register: sshReachable
-    ignore_errors: true
-
-  - name: Determine if Python installed
-    raw: python -V
-    register: pythonInstalled
-    failed_when: false
-    ignore_errors: true
-    changed_when: false
-    when: sshReachable.failed is false
-
-  - set_fact:
-      needsPython: "{{ sshReachable.failed or pythonInstalled.rc not in [0] }}"
-
-  - name: Setup basic Nix config without python
-    delegate_to: "{{ node }}"
-    become: true
-    when: needsPython
-    block:
-
-    - name: Copy Nix config to node
-      template:
-        src: "{{ nix_shared_config }}"
-        dest: "/tmp/{{ vmid }}-configuration.nix"
-      register: nixConfigChanged
-      vars: 
-        skipServiceInit: true
-
-    - when: nixConfigChanged.changed
-      block:
-
-      - name: Push config to Nix
-        command:
-          cmd: "pct push {{ vmid }} /tmp/{{ vmid }}-configuration.nix /etc/nixos/configuration.nix"
-
-      - name: Update nix-channel
-        shell:
-          cmd: pct enter {{ vmid  }}
-          stdin:
-            source /etc/set-environment;
-            nix-channel --update;
-            exit;
-
-      - name: Restart Nix container
-        delegate_to: localhost
-        become: false
-        community.general.proxmox:
-          vmid: "{{ vmid }}"
-          api_user: '{{ vault_pve_api_user }}'
-          api_password: '{{ vault_pve_api_password }}'
-          api_host: '{{ hostvars[node].ansible_host }}'
-          state: restarted
-                    
-      - name: Wait for Nix to come back up
-        run_once: true
-        pause:
-          seconds: 15
-
-      - name: Rebuild Nix
-        shell:
-          cmd: pct enter {{ vmid  }}
-          stdin:
-            source /etc/set-environment;
-            nixos-rebuild switch;
-            exit;
-            exit;
-        ignore_errors:
-
 - name: Setup Nix
   become: true
   vars:
     ansible_python_interpreter: "/run/current-system/sw/bin/python3"
   block:
+    - name: Add SOPS Age key (For runtime secrets)
+      copy:
+        content: "{{ vault_nix_age[inventory_hostname] }}"
+        dest: "/etc/sops-age.txt"
+        mode: 0500
+        owner: root
+        group: root
 
-  - name: Copy Nix config
-    template:
-      src: "{{ nix_shared_config_dir }}"
-      dest: "/etc/nixos/configuration.nix"
-    register: nixConfigChanged
+    - name: Add deploy key (for unattended SSH pulling private secrets repo)
+      copy:
+        content: "{{ vault_nix_deploy_key }}"
+        dest: "/root/.ssh/id_ed25519"
+        mode: 0500
+        owner: root
+        group: root
 
-  # Add config files
-  - name: Add config
-    template:
-      src: ./files/{{ item }}.nix.j2
-      dest: /etc/nixos/{{ item }}.nix
-    vars:
-      data_dir: "{{ project_directory }}/{{ item }}/data"
-    with_items:
-      - "{{ nix_configs }}"
-    when: nix_configs is defined
-    register: nixIncludeFilesChanged
+    - name: Get latest version of the flake
+      become: true
+      git:
+        force: true
+        dest: /etc/nixos/
+        repo: "{{ repo }}"
+      vars:
+        repo: https://github.com/CertifiKate/nix-dotfiles.git
 
-  - name: Add static files
-    copy:
-      src: "{{ item.src }}"
-      dest: "{{ item.dest }}"
-    with_items:
-      - src: "{{ figlet_font_dir }}"
-        dest: "/etc/nixos/figlet-font.flf"
-    register: nixStaticFilesChanged
-
-  - name: Rerun config
-    command:
-      cmd: "nixos-rebuild switch"
-    when: nixConfigChanged.changed or nixIncludeFilesChanged.changed or nixStaticFilesChanged.changed
+    - name: Add github to known hosts
+      known_hosts:
+        path: /etc/ssh/ssh_known_hosts
+        name: github.com
+        key: "{{ lookup('ansible.builtin.file', 'files/known_hosts-github') }}"
+        
+    - name: Run nixos-rebuild
+      become: true
+      command:
+        chdir: /etc/nixos
+        cmd: nixos-rebuild switch --flake .#{{ inventory_hostname }}

@@ -8,9 +8,18 @@
     include_role:
       name: create-proxmox-container
 
+- name: Provision Proxmox VMs
+  hosts: vm_containers
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: Create VMs
+    include_role:
+      name: create-proxmox-vm
+
 
 - name: Initialise base config for containers
-  hosts: lxc_containers
+  hosts: lxc_containers:vm_containers
   connection: ssh
   gather_facts: false
   become: true

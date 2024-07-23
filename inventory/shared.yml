@@ -6,45 +6,45 @@ all:
     dev:
     prod:
 
-    lxc:
+    shared_containers:
       hosts:
 
+      # == Organised by function ======
+
       # ======== Core Services =========
-        dns-01:
+        # dns-01:
+        #   id: 111
+        #   node: '{{ host_server }}'
+        #   os_type: 'nix'
+        #   memory: 1024
+
+        prox-01:
           id: 111
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 1024
-          # TODO: Add nix configs
 
-        prox-01:
-          id: 112
-          node: '{{ host_server }}'
-          os_type: 'nix'
-          memory: 1024
-          nix_configs:
-            - traefik
-
-        auth-01:
+        gate-01:
           id: 113
           node: '{{ host_server }}'
           os_type: 'nix'
+          memory: 512
+          roles:
+            - setup-cloudflared
+            - setup-cloudflare-ddns
+
+        build-01:
+          id: 114
+          node: '{{ host_server }}'
+          os_type: 'nix'
+          memory: 8192
+          cores: 4
+
+        auth-01:
+          id: 115
+          node: '{{ host_server }}'
+          os_type: 'nix'
           memory: 1024
-          nix_configs:
-            - authelia
-
-
-
-      # # == Organised by function ======
-      #   # Each function has different IP blocks
-
-        # prox-01:
-        #   id: 15
-        #   node: '{{ host_server }}'
-        #   ostemplate: '{{ debian_template }}'
-        #   memory: 1024
-        #   roles:
-        #     - setup-proxy-traefik
 
         avahi-01:
           id: 18
@@ -55,16 +55,6 @@ all:
           roles:
             - setup-avahi
 
-
-        gate-01:
-          id: 13
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 512
-          roles:
-            - setup-cloudflared
-            - setup-cloudflare-ddns
-
         # =============================
         # === Utilty (30-49) ==========
         util-01:
@@ -74,17 +64,16 @@ all:
           memory: 2048
           roles:
           - setup-monitoring
-          # - setup-cloudflare-ddns
           - setup-vikunja
           - setup-recipes
 
-        code-01:
-          id: 35
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 2048
-          roles:
-          - setup-coder
+        # code-01:
+        #   id: 35
+        #   node: '{{ host_server }}'
+        #   ostemplate: '{{ debian_template }}'
+        #   memory: 2048
+        #   roles:
+        #   - setup-coder
 
         stor-01:
           id: 40
@@ -98,20 +87,6 @@ all:
               host_path: "{{ hostvars[ host_server ].storage_directory }}"
           roles:
           - setup-storage
-
-        home-01:
-          id: 41
-          node: '{{ host_server }}'
-          ostemplate: '{{ debian_template }}'
-          memory: 1024
-          custom_mounts:
-            mp1: 
-              container_path: "{{ hostvars[ host_server].zigbee_adapter | default() }}"
-              host_path: "{{ hostvars[ host_server].zigbee_adapter | default() }}"
-          custom_networks:
-            net1: "name=eth1,ip=192.168.200.2/24,bridge=vmbr2,gw=192.168.200.1"
-          roles:
-          - setup-home
 
         # =============================
         # === Media (50-59) ===========
@@ -144,18 +119,28 @@ all:
             - setup-torrent
             - setup-library
 
+        # =============================
+        # === Media (50-59) ===========
+        mine-01:
+          id: 131
+          node: '{{ host_server }}'
+          os_type: 'nix'
+          memory: 8192
+          cores: 4
+          in_dmz: true
+
     proxy:
       hosts:
         prox-01:
           # proxy_dev_mode: true
           traefikServices:
             # Core
-            # - name: authentik
-            #   host: 'auth.{{ project_tld }}'
-            #   destScheme: https
-            #   destHost: auth-01
-            #   destPort: '9443'
-            #   proxyAuth: false
+            - name: authelia
+              host: 'auth.{{ project_tld }}'
+              destScheme: https
+              destHost: auth-01
+              destPort: '9091'
+              proxyAuth: false
             
             # - name: wireguard
             #   host: 'wgui.{{ project_tld }}'

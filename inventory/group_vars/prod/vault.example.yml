@@ -1,6 +1,5 @@
 project_tld: URL
 
-vault_pve_ansible_pubkey: SSH PUB KEY
 vault_pubkeys:
     - username: root
       pubkeys:
@@ -10,10 +9,13 @@ vault_pubkeys:
       pubkeys:
         - "PUB KEY N"
 
+vault_pve_ansible_pubkey: SSH PUB KEY
 vault_pve_api_user: USER
 vault_pve_api_password: PASSWORD
 
 vault_authelia_jwt_secret: SECRET
+vault_authelia_session_secret: SECRET
+vault_authelia_storage_key: SECRET
 
 vault_tandoor_secret: PASSWORD
 vault_tandoor_db_password: PASS

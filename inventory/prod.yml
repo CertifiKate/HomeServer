@@ -5,10 +5,10 @@ all:
         microwave:
           ansible_host: 192.168.0.5
           gateway: 192.168.0.1
-          mgmt_interface: enp0s31f6
-          ethernet_interface: enp1s0
+          mgmt_interface: enp1s0 
+          ethernet_interface: enp0s31f6
           project_root_directory: "/services"
-          project_directory: "{{ project_root_directory }}/lxd"
+          project_directory: "{{ project_root_directory }}/lxc"
           # Use direct disk rather than MergerFS endpoint just incase that has failed
           local_borg_repo_dir: "/mnt/disk1/Backups/"
           local_borg_repo_services: "{{ local_borg_repo_dir }}services-local.borg"
@@ -40,7 +40,6 @@ prod:
     # LEGACY - Will be moved to lxc_containers
     pve_lxd_containers:
       hosts:
-        auth-01:
         dns-02:
         avahi-01:
         gate-01:
@@ -53,6 +52,11 @@ prod:
       hosts:
         dns-01:
         prox-01:
+        auth-01:
+
+    vm_containers:
+      hosts:
+        mine-01:
 
     # pve_containers:
     #   hosts:

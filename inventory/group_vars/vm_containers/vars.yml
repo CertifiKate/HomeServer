@@ -1,0 +1,23 @@
+remote_user: "root"
+ansible_user: "{{ remote_user }}"
+project_root_directory: "/config"
+project_directory: "{{ project_root_directory }}"
+
+# Use docker for most hosts by default
+uses_docker: yes
+pve_api_user: '{{ vault_pve_api_user }}'
+pve_api_password: '{{ vault_pve_api_password }}'
+vmid: "{{ '2%04d'|format(id) }}"
+
+ip_base: "192.168.{{ vlan['dmz'] if in_dmz is defined and in_dmz else vlan['server'] }}"
+
+pve_internal_ip: '{{ ip_base }}.{{ id }}'
+
+ansible_host: '{{ pve_internal_ip }}'
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+vm_templates:
+    nix: "vzdump-qemu-nixos-24.05-golden.vma.zst"
+
+
+nix_shared_config_dir: "../inventory/group_vars/vm_containers/configuration.nix.j2"

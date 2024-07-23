@@ -6,8 +6,6 @@
 
 {
   imports = [ 
-    (modulesPath + "/virtualisation/proxmox-lxc.nix")
-
     {% if nix_configs is defined and (skipServiceInit is undefined or not skipServiceInit)  %}
       {% for config in nix_configs %}
     ./{{ config }}.nix
@@ -17,8 +15,6 @@
   
   networking.hostName = "{{ inventory_hostname }}";
   time.timeZone = "{{ timezone }}";
-  
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   environment.systemPackages = with pkgs; [
     python3
@@ -80,6 +76,6 @@
 {% endfor %}  
 
   services.openssh.enable = true;
-
+  services.cloud-init.network.enable = true;
   system.stateVersion = "23.11";
 }

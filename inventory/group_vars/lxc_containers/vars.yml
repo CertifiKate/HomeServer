@@ -1,14 +1,19 @@
 remote_user: "root"
 ansible_user: "{{ remote_user }}"
 project_root_directory: "/config"
+project_directory: "{{ project_root_directory }}"
 
 # Use docker for most hosts by default
 uses_docker: yes
 pve_api_user: '{{ vault_pve_api_user }}'
 pve_api_password: '{{ vault_pve_api_password }}'
 vmid: "{{ '1%04d'|format(id) }}"
-pve_internal_ip: '192.168.10.{{ id }}'
-ansible_host: '{{ pve_internal_ip }}'
+ansible_host: '{{ inventory_hostname }}.srv'
 ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+lxc_templates:
+    nix: "nixos-24.05-golden.tar.xz"
+    debian: "debian-12-standard_12.0-1_amd64.tar.zst"
+
 
 nix_shared_config_dir: "../inventory/group_vars/lxc_containers/configuration.nix.j2"
