@@ -6,18 +6,20 @@
     api_user: '{{ vault_pve_api_user }}'
     api_password: '{{ vault_pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
-    name: '{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
+
+    name: '{{ inventory_hostname }}'
     archive: "local:backup/{{ vm_templates['nix'] }}"
     timeout: 180
     cores: '{{ cores | default(1) }}'
     memory: '{{ memory | default(1024) }}'
     onboot: '{{ onboot | default(true) }}'
     sshkeys: '{{ pve_ansible_pubkey }}'
+    pool: "apps"
     net:
-      '{{ network_interfaces }}'
-    ipconfig:
-      ipconfig0: 'gw={{ ip_base }}.1,ip={{ ansible_host }}/24'
+      net0: "virtio,bridge=vmbr0,tag={{ network_tag }}"
     state: present
+  register: added_vm
+
 
 - name: Start VM
   community.general.proxmox_kvm:
@@ -25,10 +27,6 @@
     api_user: '{{ vault_pve_api_user }}'
     api_password: '{{ vault_pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
-    update: true
-    update_unsafe: true
-    ide:
-      ide2: 'local:cloudinit,format=qcow2'
     state: started
   register: startVm
 
@@ -38,23 +36,3 @@
     port: 22
     timeout: 30
   when: startVm.changed
-
-# - name: Add VMs (with updated config)
-#   throttle: 1
-#   community.general.proxmox_kvm:
-#     vmid: '{{ vmid }}'
-#     node: '{{ node }}'
-#     api_user: '{{ vault_pve_api_user }}'
-#     api_password: '{{ vault_pve_api_password }}'
-#     api_host: '{{ hostvars[node].ansible_host }}'
-#     name: '{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
-#     cores: '{{ cores | default(1) }}'
-#     memory: '{{ memory | default(1024) }}'
-#     onboot: '{{ onboot | default(true) }}'
-#     net:
-#       '{{ network_interfaces }}'
-#     update: true
-#     update_unsafe: true
-#     state: started
-#     scsi:
-#       scsi0: "storage:local-lvm2,format=raw"

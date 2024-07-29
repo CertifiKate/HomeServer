@@ -6,7 +6,7 @@ all:
     dev:
     prod:
 
-    shared_containers:
+    containers:
       hosts:
 
       # == Organised by function ======
@@ -41,19 +41,25 @@ all:
           memory: 1024
 
         avahi-01:
-          id: 18
+          id: 116
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 512
-          # ostemplate: '{{ debian_template }}'
-          # uses_docker: false
-          # roles:
-          #   - setup-avahi
+          networks:
+              net0: "name=eth0,ip=dhcp,bridge=vmbr1,tag={{ vlan['server'] }}"
+              net1: "name=eth0,ip=dhcp,bridge=vmbr1,tag=50"
+
+        backup-01:
+          id: 120
+          node: '{{ host_server }}'
+          os_type: 'nix'
+          memory: 512
+
 
         # =============================
         # === Utilty (30-49) ==========
         util-01:
-          id: 30
+          id: 130
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 2048
@@ -86,7 +92,7 @@ all:
         # =============================
         # === Media (50-59) ===========
         media-01:
-          id: 50
+          id: 150
           node: '{{ host_server }}'
           os_type: 'nix'
           memory: 4096
@@ -98,7 +104,7 @@ all:
           #   - setup-jellyfin
 
         media-02:
-          id: 51
+          id: 151
           node: '{{ host_server }}'
           ostemplate: '{{ debian_template }}'
           memory: 4096

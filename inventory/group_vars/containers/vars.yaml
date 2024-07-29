@@ -1,0 +1,21 @@
+ansible_user: "ansible"
+project_root_directory: "/config"
+project_directory: "{{ project_root_directory }}"
+
+pve_api_user: '{{ vault_pve_api_user }}'
+pve_api_password: '{{ vault_pve_api_password }}'
+
+ctid: "{{ '1%04d'|format(id) }}"
+vmid: "{{ '2%04d'|format(id) }}"
+
+network_type: "{{ 'server' if in_dmz is undefined or in_dmz is false else 'dmz' }}"
+
+network_tag: "{{ vlan[network_type] }}"
+
+ansible_host: "{{ inventory_hostname }}.{{ host_tld[network_type] }}"
+ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+lxc_templates:
+    nix: "nixos-24.05-golden.tar.xz"
+vm_templates:
+    nix: "vzdump-qemu-nixos-24.05-golden.vma.zst"

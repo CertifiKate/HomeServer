@@ -25,7 +25,7 @@ prod:
   hosts:
     microwave:
   children:
-
+  
     lxc_containers:
       hosts:
         prox-01:

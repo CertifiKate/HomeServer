@@ -1,11 +1,11 @@
 - name: Create Nix Golden VM image
-  hosts: prox-01
+  hosts: build-01
   become: true
   gather_facts: false
   vars:
-    build_server: prox-01
-    default_config: ../inventory/group_vars/vm_containers/configuration-minimal.nix.j2
-    skipServiceInit: true
+    build_server: build-01
+    input_repo: "https://github.com/CertifiKate/nix-dotfiles"
+    input_config_path: "golden.nix"
     output_name: "vzdump-qemu-nixos-24.05-golden.vma.zst"
     output_path: "/var/lib/vz/dump/{{ output_name }}"
     output_host: "microwave"
@@ -13,10 +13,10 @@
 
   - name: Create image
     block:
-      - name: Copy default config
-        template:
-          src: "{{ default_config }}"
-          dest: /tmp/configuration.nix
+      - name: Clone repo
+        git:
+          repo: "{{ input_repo }}"
+          dest: /tmp/nixos
         register: copyConfig
 
       - name: Run Generator
@@ -27,7 +27,7 @@
             --extra-experimental-features flakes -- 
             --format proxmox 
             --disk-size 4096
-            --configuration /tmp/configuration.nix
+            --configuration /tmp/nixos/{{input_config_path}}
         register: runGenerator
 
       - name: Print filename

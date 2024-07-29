@@ -1,24 +1,25 @@
 - name: Add LXCs
-  throttle: 1
+  throttle: 2
   community.general.proxmox:
-    vmid: '{{ vmid }}'
+    vmid: '{{ ctid }}'
     node: '{{ node }}'
     api_user: '{{ vault_pve_api_user }}'
     api_password: '{{ vault_pve_api_password }}'
     api_host: '{{ hostvars[node].ansible_host }}'
+
     password: '{{ password | default(omit) }}'
-    hostname: '{{ inventory_hostname + ("-dev" if node in groups["dev"] else "") }}'
-    ostemplate: 'local:vztmpl/{{ lxc_templates[os_type] }}'
+    hostname: '{{ inventory_hostname }}'
+    ostemplate: 'local:vztmpl/{{ lxc_templates["nix"] }}'
     storage: 'local-lvm2'
     cores: '{{ cores | default(1) }}'
     memory: '{{ memory | default(512) }}'
-    swap: '{{ swap | default(1024) }}'
+    swap: '{{ swap | default( [memory, 2048] | min) }}'
     onboot: '{{ onboot | default(true) }}'
     pubkey: '{{ pve_ansible_pubkey }}'
     unprivileged: '{{ pve_unprivileged | default(true) }}'
+    state: present
     pool: "apps"
-    netif:
-      net0: name=eth0,ip=dhcp,bridge=vmbr1,tag=10
+    netif: "{{ networks }}"
     features:
     - nesting=1
   register: added_lxc
@@ -43,7 +44,7 @@
     - name: Add mount points
       command:
         #     pct set 150        --mp1            /mnt/disk1/Media          ,mp=/data/
-        cmd: "pct set {{ vmid }} --{{ item.key }} {{ item.value.host_path }},mp={{ item.value.container_path }}"
+        cmd: "pct set {{ ctid }} --{{ item.key }} {{ item.value.host_path }},mp={{ item.value.container_path }}"
       register: mpResponse
       changed_when: mpResponse.rc not in [0]
       failed_when: mpResponse.rc not in [0,1]
@@ -75,7 +76,7 @@
     connection: local
     become: false
     community.general.proxmox:
-      vmid: "{{ vmid }}"
+      vmid: "{{ ctid }}"
       api_user: '{{ vault_pve_api_user }}'
       api_password: '{{ vault_pve_api_password }}'
       api_host: '{{ hostvars[node].ansible_host }}'
@@ -91,7 +92,7 @@
   block:
     - name: Start LXC
       community.general.proxmox:
-        vmid: '{{ vmid }}'
+        vmid: '{{ ctid }}'
         api_user: '{{ vault_pve_api_user }}'
         api_password: '{{ vault_pve_api_password }}'
         api_host: '{{ hostvars[node].ansible_host }}'

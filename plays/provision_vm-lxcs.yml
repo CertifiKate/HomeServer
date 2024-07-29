@@ -6,7 +6,7 @@
   tasks:
   - name: Create LXCs
     include_role:
-      name: create-proxmox-container
+      name: create-proxmox-lxc
 
 - name: Provision Proxmox VMs
   hosts: vm_containers
