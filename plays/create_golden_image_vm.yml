@@ -21,10 +21,9 @@
 
       - name: Run Generator
         command:
+          chdir: /tmp/nixos
           cmd: |
-            nix run github:nix-community/nixos-generators 
-            --extra-experimental-features nix-command 
-            --extra-experimental-features flakes -- 
+            nix run github:nix-community/nixos-generators -- 
             --format proxmox 
             --disk-size 4096
             --configuration /tmp/nixos/{{input_config_path}}

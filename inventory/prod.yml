@@ -41,3 +41,4 @@ prod:
     vm_containers:
       hosts:
         mine-01:
+        backup-01:

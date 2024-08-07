@@ -9,14 +9,14 @@
 
     name: '{{ inventory_hostname }}'
     archive: "local:backup/{{ vm_templates['nix'] }}"
-    timeout: 180
+    timeout: 600
     cores: '{{ cores | default(1) }}'
     memory: '{{ memory | default(1024) }}'
     onboot: '{{ onboot | default(true) }}'
     sshkeys: '{{ pve_ansible_pubkey }}'
     pool: "apps"
     net:
-      net0: "virtio,bridge=vmbr0,tag={{ network_tag }}"
+      net0: "virtio,bridge=vmbr1,tag={{ network_tag }}"
     state: present
   register: added_vm
 
@@ -29,6 +29,20 @@
     api_host: '{{ hostvars[node].ansible_host }}'
     state: started
   register: startVm
+
+- name: Get ip of new VMs
+  delegate_to: "{{ node }}"
+  connection: ssh
+  become: true
+  shell: 
+    cmd: "qm agent {{ vmid }} network-get-interfaces | grep '192.168.'"
+  register: ip_command
+
+- set_fact:
+    ansible_host: "{{ ip_command.stdout_lines  | regex_search('\\d*\\.\\d*\\.\\d*\\.\\d*') }}"
+
+- debug:
+    msg: "{{ ansible_host }}"
 
 - name: Pause until started
   wait_for:

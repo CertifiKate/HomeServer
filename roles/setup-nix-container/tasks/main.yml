@@ -1,5 +1,4 @@
 - name: Setup Nix
-  become: true
   vars:
     ansible_python_interpreter: "/run/current-system/sw/bin/python3"
   block:
