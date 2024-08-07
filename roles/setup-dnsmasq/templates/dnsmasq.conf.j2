@@ -1,6 +1,0 @@
-listen-address=::1,127.0.0.1,{{ pve_internal_ip }}
-
-# Route all requests to {{ project_tld }} to internal proxy server
-address=/{{ project_tld }}/{{ hostvars['prox-01'].pve_internal_ip }}
-
-interface=eth0

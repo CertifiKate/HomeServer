@@ -4,8 +4,10 @@ docker_pull: false
 
 pve_ansible_pubkey: '{{ vault_pve_ansible_pubkey }}'
 
-figlet_font_dir: "../inventory/group_vars/all/bulbhead.flf"
-
 vlan:
     server: 10
     dmz: 99
+
+host_tld:
+    server: "srv"
+    dmz: "dmz"
